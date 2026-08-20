@@ -1,0 +1,2854 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ente qr: QR codes, none of the tracking</title>
+<meta name="description" content="Free, private QR code generator. Runs entirely in your browser. No redirect links, no accounts, nothing stored.">
+<meta name="theme-color" content="#F5F5F7">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preload" href="fonts/gilroy-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/gilroy-medium.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/gilroy-semibold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/gilroy-bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/gilroy-extrabold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/gochi-hand.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="ente qr: QR codes, none of the tracking">
+<meta property="og:description" content="Free, private QR code generator. Runs entirely in your browser. No redirect links, no accounts, nothing stored.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://enteqr.pages.dev/">
+<meta property="og:image" content="https://enteqr.pages.dev/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://enteqr.pages.dev/og-card.png">
+<style>
+  @font-face { font-family: "Gilroy"; src: url("fonts/gilroy-regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "Gilroy"; src: url("fonts/gilroy-medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+  @font-face { font-family: "Gilroy"; src: url("fonts/gilroy-semibold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+  @font-face { font-family: "Gilroy"; src: url("fonts/gilroy-bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+  @font-face { font-family: "Gilroy"; src: url("fonts/gilroy-extrabold.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+  @font-face { font-family: "Gilroy"; src: url("fonts/gilroy-heavy.woff2") format("woff2"); font-weight: 900; font-display: swap; }
+  @font-face { font-family: "Gochi Hand"; src: url("fonts/gochi-hand.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+
+  :root {
+    --bg: #F5F5F7;
+    --card: #FFFFFF;
+    --field: #FFFFFF;
+    --seg-track: rgba(120, 120, 128, 0.12);
+    --seg-thumb: #FFFFFF;
+    --text: #1D1D1F;
+    --text-2: #6E6E73;
+    --text-3: #AEAEB2;
+    --hairline: rgba(0, 0, 0, 0.08);
+    --green: #00B33C;
+    --green-deep: #009B34;
+    --green-tint: rgba(0, 179, 60, 0.12);
+    --tile: #FFFFFF;
+    --glass: rgba(245, 245, 247, 0.78);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
+    --shadow-tile: 0 2px 8px rgba(0, 0, 0, 0.06), 0 32px 80px -24px rgba(0, 0, 0, 0.18);
+    --shadow-thumb: 0 1px 3px rgba(0, 0, 0, 0.12), 0 3px 8px rgba(0, 0, 0, 0.06);
+    --sans: "Gilroy", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    --hand: "Gochi Hand", "Comic Sans MS", cursive;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  /* light mode only, by design */
+  :root { color-scheme: light; }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  html { background: #FFFFFF; }
+  body {
+    background: #FFFFFF;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 14px;
+  }
+
+  ::selection { background: var(--green-tint); }
+  :focus-visible {
+    outline: 3px solid rgba(0, 179, 60, 0.5);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  button { font-family: var(--sans); }
+
+  /* ---------- glass header ---------- */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: var(--glass);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mark {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .finder {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5px;
+    width: 18px;
+    height: 18px;
+  }
+  .finder span { border-radius: 3px; background: var(--text); }
+  .finder span:nth-child(2) { background: var(--green); border-radius: 50%; }
+  .finder span:nth-child(3) { background: var(--green); }
+  .finder span:nth-child(4) { background: var(--text-3); }
+  .wordmark { font-weight: 700; font-size: 16px; letter-spacing: 0; }
+  .nav-note {
+    font-size: 13px;
+    color: var(--text-2);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px 72px; }
+
+  /* ---------- hero v2: the green stage ---------- */
+  .hs {
+    position: relative;
+    background: #13B72E url("bg-pattern.svg") center / cover no-repeat;
+    color: #fff;
+    overflow: hidden;
+    min-height: calc(100svh - 28px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 28px;
+  }
+  .hs-nav {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 30px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .hs-nav .mark svg { display: block; height: 30px; width: auto; }
+  .hs-nav .nav-note {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    padding: 9px 16px;
+  }
+  .hs-grid {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    flex: 1;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 24px 28px 64px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: center;
+  }
+  .hl h1 { margin: 0; line-height: 0.98; letter-spacing: -0.01em; }
+  .hl .l1 {
+    display: block;
+    font-weight: 800;
+    font-size: clamp(54px, 8vw, 116px);
+    color: #fff;
+  }
+  .hl .l2 {
+    display: inline-block;
+    font-family: var(--hand);
+    font-size: clamp(50px, 7.6vw, 108px);
+    color: #101F15;
+    transform: rotate(-1.2deg);
+    margin-top: 4px;
+    padding-bottom: 0.12em;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 24' preserveAspectRatio='none'%3E%3Cpath d='M8 16 C 160 6, 440 6, 592 12' stroke='%23101F15' stroke-width='14' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 100% 0.16em;
+    background-position: left bottom;
+  }
+  .hs-why {
+    color: #fff;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 2px;
+    white-space: nowrap;
+  }
+  @media (hover: hover) { .hs-why:hover { color: #101F15; } }
+  .hs-sub {
+    font-size: 20px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.94);
+    max-width: 34ch;
+    margin: 26px 0 30px;
+  }
+  .hs-form { position: relative; max-width: 560px; }
+  #data {
+    width: 100%;
+    border: none;
+    border-radius: 24px;
+    background: #fff;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 18px;
+    padding: 25px 92px 25px 26px;
+    box-shadow: 0 14px 44px -14px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 180ms ease;
+  }
+  #data::placeholder { color: var(--text-2); }
+  #data:focus {
+    outline: none;
+    box-shadow: 0 14px 44px -14px rgba(0, 0, 0, 0.3), 0 0 0 4px rgba(255, 255, 255, 0.45);
+  }
+  .hs-form button {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    bottom: 10px;
+    width: 62px;
+    border: none;
+    border-radius: 18px;
+    background: #111;
+    color: #fff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 120ms var(--ease-out), background 150ms ease;
+  }
+  .hs-form button:active { transform: scale(0.94); }
+  @media (hover: hover) and (pointer: fine) {
+    .hs-form button:hover { background: #000; }
+  }
+  .hs-form.shake { animation: shake 320ms ease; }
+  @keyframes shake {
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+
+  .art { --cardw: min(440px, 88%); position: relative; height: 540px; }
+  .floaty {
+    --fx: 50%;
+    position: absolute;
+    right: 50%;
+    top: 50%;
+    width: var(--cardw);
+    transform: translate(var(--fx), -50%);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .floaty { animation: floaty 7s ease-in-out infinite alternate; }
+  }
+  @keyframes floaty {
+    from { transform: translate(var(--fx), calc(-50% - 4px)); }
+    to { transform: translate(var(--fx), calc(-50% + 4px)); }
+  }
+  .artcard {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    --rz: 6deg;
+    transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) rotate(var(--rz));
+    background: #fff;
+    border-radius: 30px;
+    box-shadow: 0 34px 90px -22px rgba(0, 0, 0, 0.4);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .sheen {
+    position: absolute;
+    inset: -25%;
+    background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.14) 48%,
+      rgba(255, 255, 255, 0.05) 54%, transparent 66%);
+    opacity: 0;
+    transition: opacity 300ms ease;
+    pointer-events: none;
+  }
+  .artcard:hover .sheen { opacity: 0.8; }
+  #heroQR { width: 82%; }
+  #heroQR svg, #heroQR canvas { width: 100%; height: auto; display: block; }
+  .chip {
+    position: absolute;
+    z-index: 2;
+    font-family: var(--hand);
+    font-size: 23px;
+    letter-spacing: 0.04em;
+    padding: 12px 20px;
+    border-radius: 12px;
+    color: #17251B;
+    box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+  }
+  .chip.ads {
+    background: #FAF6EE;
+    top: calc(50% - var(--cardw) / 2 - 28px);
+    left: calc(50% - var(--cardw) / 2 - 16px);
+    transform: rotate(-7deg);
+  }
+  .chip.track {
+    background: #DCF2E0;
+    top: calc(50% - 44px);
+    right: calc(50% - var(--cardw) / 2 - 34px);
+    transform: rotate(3deg);
+  }
+  .chip.signup {
+    background: #F6EFDC;
+    bottom: calc(50% - var(--cardw) / 2 - 24px);
+    left: calc(50% - var(--cardw) / 2 - 18px);
+    transform: rotate(-3deg);
+  }
+  .scrib2 {
+    position: absolute;
+    top: calc(50% - var(--cardw) / 2 - 88px);
+    right: calc(50% - var(--cardw) / 2 + 22px);
+    font-family: var(--hand);
+    font-size: 19px;
+    color: #fff;
+    transform: rotate(2deg);
+    text-align: center;
+    line-height: 1.25;
+  }
+  .scrib2 svg { display: block; margin: 6px auto 0; }
+
+  /* ente.com corner chip */
+  .chip-ente {
+    position: fixed;
+    right: 38px;
+    bottom: 36px;
+    z-index: 20;
+    display: block;
+    padding: 10px 15px;
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: #111111;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.35);
+  }
+  .chip-ente svg { display: block; height: 12px; width: auto; }
+  @media (hover: hover) and (pointer: fine) {
+    .chip-ente { transition: transform 220ms var(--ease-out), background 180ms ease, color 180ms ease; }
+    .chip-ente:hover {
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 0 18px 36px -12px rgba(0, 0, 0, 0.45);
+      background: var(--green);
+      color: #FFFFFF;
+    }
+  }
+  @media (max-width: 960px) {
+    .chip-ente { right: 24px; bottom: 24px; padding: 8px 12px; }
+    .chip-ente svg { height: 10px; }
+  }
+
+  /* hover delight: stickers peel, the card lifts and levels */
+  .chip { cursor: grab; user-select: none; touch-action: none; }
+  .chip.dragging {
+    transition: none !important;
+    cursor: grabbing;
+    z-index: 6;
+    box-shadow: 0 26px 48px -14px rgba(0, 0, 0, 0.5);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .chip, .scrib2 { transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out); }
+    .chip:hover { box-shadow: 0 18px 36px -12px rgba(0, 0, 0, 0.45); }
+    .chip.ads:hover { transform: rotate(-3deg) translateY(-5px) scale(1.05); }
+    .chip.track:hover { transform: rotate(1deg) translateY(-5px) scale(1.05); }
+    .chip.signup:hover { transform: rotate(-1deg) translateY(-5px) scale(1.05); }
+    .scrib2:hover { transform: rotate(0deg) scale(1.05); }
+    .hs-form button svg { transition: transform 180ms var(--ease-out); }
+    .hs-form button:hover svg { transform: translateX(3px); }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .artcard { transition: box-shadow 260ms var(--ease-out); will-change: transform; }
+    .artcard:hover {
+      box-shadow: 0 46px 110px -24px rgba(0, 0, 0, 0.45);
+    }
+    /* butter: spring physics where the engine supports linear() easing */
+    @supports (transition-timing-function: linear(0, 1)) {
+      .chip, .scrib2, .chip-ente {
+        transition-timing-function: linear(0, 0.013 1.2%, 0.05 2.5%, 0.193 5.4%,
+          0.72 12.7%, 0.881 15.6%, 1.004 18.6%, 1.05 20.5%, 1.081 22.5%,
+          1.093 24.6%, 1.087 27.1%, 1.056 31%, 0.997 37.6%, 0.977 41.7%,
+          0.974 46.7%, 0.999 59.5%, 1.002 69.5%, 1);
+        transition-duration: 420ms;
+      }
+    }
+  }
+
+  /* ---------- share sheet ---------- */
+  .sheet-back {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(16, 20, 17, 0.45);
+    opacity: 0;
+    transition: opacity 250ms ease;
+    pointer-events: none;
+  }
+  .sheet-back.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 51;
+    background: var(--card);
+    border-radius: 24px 24px 0 0;
+    padding: 22px 22px calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(104%);
+    transition: transform 380ms cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 86svh;
+    overflow: auto;
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet h3 {
+    margin: 6px 0 22px;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .sheet-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: var(--seg-track);
+    color: var(--text-2);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
+  }
+  .sheet-close:active { transform: scale(0.9); }
+  @media (hover: hover) and (pointer: fine) {
+    .sheet-close:hover { background: rgba(120, 120, 128, 0.2); color: var(--text); }
+  }
+  .sheet-grab {
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.15);
+    margin: 0 auto 14px;
+  }
+  #storyPreview {
+    display: block;
+    width: min(240px, 56vw);
+    aspect-ratio: 3 / 4;
+    margin: 0 auto 20px;
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+    background: #F1F3F2;
+    opacity: 0;
+  }
+  #storyPreview.ready { opacity: 1; transition: opacity 180ms var(--ease-out); }
+  .sheet .textfield { margin-top: 0; margin-bottom: 14px; }
+  .sheet-actions { display: flex; gap: 10px; justify-content: center; }
+  @media (min-width: 700px) {
+    .sheet {
+      left: 50%;
+      right: auto;
+      bottom: 50%;
+      transform: translate(-50%, 50%) scale(0.96);
+      opacity: 0;
+      width: 380px;
+      border-radius: 24px;
+      transition: transform 300ms var(--ease-out), opacity 250ms ease;
+      pointer-events: none;
+    }
+    .sheet.open { transform: translate(-50%, 50%) scale(1); opacity: 1; pointer-events: auto; }
+    .sheet-grab { display: none; }
+  }
+
+  /* ---------- color picker popover ---------- */
+  .picker {
+    position: absolute;
+    z-index: 40;
+    width: 248px;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 16px 48px -8px rgba(0, 0, 0, 0.28);
+    display: none;
+  }
+  .picker.open { display: block; }
+  .pk-sv {
+    position: relative;
+    height: 164px;
+    border-radius: 10px;
+    cursor: crosshair;
+    touch-action: none;
+    background-image: linear-gradient(to top, #000, rgba(0, 0, 0, 0)),
+      linear-gradient(to right, #fff, var(--pk-hue, #f00));
+  }
+  .pk-dot {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), inset 0 0 1px rgba(0, 0, 0, 0.25);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .pk-hue {
+    position: relative;
+    height: 14px;
+    border-radius: 999px;
+    margin-top: 12px;
+    cursor: pointer;
+    touch-action: none;
+    background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  }
+  .pk-hthumb {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .pk-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .pk-eyed {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 9px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    color: var(--text-2);
+  }
+  .pk-hex {
+    flex: 1;
+    min-width: 0;
+    background: var(--seg-track);
+    border: none;
+    border-radius: 9px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 9px 10px;
+    text-transform: lowercase;
+  }
+  .pk-hex:focus { outline: 2px solid rgba(0, 179, 60, 0.5); }
+
+  #studioWrap[hidden] { display: none; }
+  #studioWrap {
+    background: var(--bg);
+    border-radius: 28px;
+    margin-top: 14px;
+  }
+  #studioWrap .wrap { padding-top: 64px; }
+
+
+  @media (max-width: 960px) {
+    body { padding: 8px; }
+    .hs { border-radius: 20px; min-height: calc(100svh - 16px); }
+    #studioWrap { border-radius: 20px; margin-top: 8px; }
+    .hs-nav { padding-top: 26px; }
+    .hs-grid { grid-template-columns: 1fr; padding-top: 40px; padding-bottom: 80px; gap: 12px; }
+    .hl { text-align: center; }
+    .hs-sub { margin-left: auto; margin-right: auto; }
+    .hs-form { margin: 0 auto; }
+    .art { --cardw: min(320px, 80vw); height: 460px; margin-top: 32px; }
+    .artcard { --rz: 4deg; }
+    .chip { font-size: 18px; padding: 8px 14px; }
+    .chip.track { right: calc(50% - var(--cardw) / 2 - 10px); }
+    .scrib2 { font-size: 15px; }
+    .scrib2 svg { width: 20px; height: 24px; }
+  }
+
+  /* ---------- studio ---------- */
+  .studio {
+    display: grid;
+    grid-template-columns: 1fr 384px;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .preview {
+    position: sticky;
+    top: 84px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .tile {
+    width: min(460px, 100%);
+    aspect-ratio: 1;
+    background: var(--tile);
+    border-radius: 34px;
+    display: grid;
+    place-items: center;
+    box-shadow: var(--shadow-tile);
+    transform: perspective(1100px) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
+  }
+  #qr { width: 82%; position: relative; }
+  #qr > svg, #qr canvas { display: block; width: 100%; height: auto; }
+  .share-round {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    box-shadow: var(--shadow-card);
+    transition: transform 120ms var(--ease-out), color 150ms ease, box-shadow 150ms ease;
+  }
+  .share-round:active { transform: scale(0.92); }
+  @media (hover: hover) and (pointer: fine) {
+    .share-round:hover { color: var(--green-deep); box-shadow: 0 8px 22px -6px rgba(0, 0, 0, 0.22); }
+  }
+  .tile.stamp { animation: stamp 300ms var(--ease-out); }
+  @keyframes stamp { 35% { transform: scale(0.985); } }
+  .pill.swapping { opacity: 0.35; }
+  .pill .lbl { transition: opacity 120ms ease; }
+  .pill svg.mi { display: block; }
+  .pill { transition: background 150ms ease, color 150ms ease, opacity 120ms ease, transform 120ms var(--ease-out), box-shadow 150ms ease; }
+  .tile .empty { color: var(--text-2); font-size: 15px; text-align: center; padding: 0 48px; }
+
+  .dlrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: min(460px, 100%);
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: var(--shadow-card);
+    transition: background 150ms ease, color 150ms ease, transform 120ms var(--ease-out), box-shadow 150ms ease;
+  }
+  .pill:active { transform: scale(0.97); }
+  .pill:not(.primary):not(.quiet) { border: 1px solid rgba(0, 0, 0, 0.05); }
+  .pill.primary { background: var(--green-deep); color: #fff; font-weight: 600; }
+  .pill.quiet { background: transparent; box-shadow: none; color: var(--green-deep); }
+  #copyBtn { min-width: 88px; }
+  .pill:disabled { opacity: 0.35; pointer-events: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .pill.primary:hover { background: var(--green); }
+    .pill:not(.primary):not(.quiet):hover { color: var(--green-deep); }
+    .pill.quiet:hover { background: var(--green-tint); }
+  }
+  .dlrow select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M2 2.5L6 6L10 2.5' stroke='%236E6E73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center / 11px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-card);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 32px 10px 16px;
+    cursor: pointer;
+  }
+  .hint { font-family: var(--hand); font-size: 15px; color: var(--text-2); margin: 0; }
+
+  /* ---------- controls ---------- */
+  .controls { display: flex; flex-direction: column; gap: 18px; }
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: var(--shadow-card);
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 14px;
+  }
+  .rowlabel {
+    font-size: 13px;
+    color: var(--text-2);
+    margin: 14px 0 8px;
+  }
+  h2 + .rowlabel, .advbody .rowlabel { margin-top: 0; }
+
+  /* preset thumbs */
+  .presets { display: flex; gap: 12px; flex-wrap: wrap; }
+  .preset {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-2);
+    font-size: 12px;
+    font-family: var(--sans);
+  }
+  .preset .thumbwrap {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    transition: transform 120ms var(--ease-out);
+  }
+  .preset:active .thumbwrap { transform: scale(0.95); }
+  .preset[aria-checked="true"] .thumbwrap {
+    box-shadow: inset 0 0 0 1px var(--hairline), 0 0 0 2.5px var(--card), 0 0 0 5px var(--green);
+  }
+  .preset[aria-checked="true"] { color: var(--text); font-weight: 500; }
+  .preset .thumbwrap svg, .preset .thumbwrap canvas { width: 100%; height: 100%; display: block; }
+
+  /* glyph tiles (shape / frame / eye) */
+  .tiles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .gtile {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--seg-track);
+    border: none;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 120ms var(--ease-out), box-shadow 150ms ease, background 150ms ease;
+  }
+  .gtile:active { transform: scale(0.94); }
+  .gtile[aria-checked="true"] {
+    background: var(--card);
+    box-shadow: 0 0 0 2.5px var(--card), 0 0 0 5px var(--green), var(--shadow-card);
+  }
+  .glyph {
+    display: grid;
+    grid-template-columns: 9px 9px;
+    gap: 2.5px;
+  }
+  .glyph i { width: 9px; height: 9px; background: var(--text); display: block; }
+  .glyph-one { width: 20px; height: 20px; display: block; }
+
+  /* color swatches */
+  .swatches { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+  .swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+    transition: transform 120ms var(--ease-out), box-shadow 150ms ease;
+    padding: 0;
+  }
+  .swatch:active { transform: scale(0.92); }
+  .swatch[aria-checked="true"] {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12), 0 0 0 2.5px var(--card), 0 0 0 5px var(--green);
+  }
+  .swatch.wheel {
+    background: conic-gradient(#f43f5e, #f59e0b, #84cc16, #06b6d4, #6366f1, #d946ef, #f43f5e);
+  }
+  .hexfield {
+    width: 84px;
+    margin-left: auto;
+    background: var(--seg-track);
+    border: none;
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 7px 9px;
+    text-transform: lowercase;
+  }
+  .hexfield:focus { outline: 2px solid rgba(0, 179, 60, 0.5); }
+  .swrow { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+
+  .textfield {
+    width: 100%;
+    background: var(--seg-track);
+    border: none;
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 10px 12px;
+    margin-top: 12px;
+  }
+  .textfield:focus { outline: 2px solid rgba(0, 179, 60, 0.5); }
+
+  /* frame option glyphs */
+  .fg-outline {
+    width: 24px; height: 24px;
+    border: 2px solid var(--text);
+    border-radius: 7px;
+    display: grid; place-items: center;
+  }
+  .fg-outline .glyph { transform: scale(0.62); }
+  .fg-card {
+    width: 24px; height: 24px;
+    background: var(--text);
+    border-radius: 7px;
+    display: grid; place-items: center;
+  }
+  .fg-card i { width: 12px; height: 12px; background: var(--card); border-radius: 3px; display: block; }
+  .fg-caption { display: grid; justify-items: center; gap: 3px; }
+  .fg-caption .glyph { transform: scale(0.8); }
+  .fg-caption b { width: 14px; height: 3px; border-radius: 2px; background: var(--text); display: block; }
+
+  /* segmented control */
+  .seg {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--n), 1fr);
+    background: var(--seg-track);
+    border-radius: 9px;
+    padding: 2px;
+  }
+  .seg .thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: calc((100% - 4px) / var(--n));
+    height: calc(100% - 4px);
+    background: var(--seg-thumb);
+    border-radius: 7px;
+    box-shadow: var(--shadow-thumb);
+    transition: transform 200ms var(--ease-out);
+  }
+  .seg label { position: relative; display: block; }
+  .seg input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .seg span {
+    position: relative;
+    display: block;
+    text-align: center;
+    font-size: 13px;
+    padding: 6px 0;
+    color: var(--text-2);
+    transition: color 150ms ease;
+    user-select: none;
+  }
+  .seg input:checked + span { color: var(--text); font-weight: 500; }
+  .seg input:focus-visible + span { outline: 2px solid rgba(0, 179, 60, 0.5); border-radius: 7px; }
+
+  /* logo */
+  .logorow { display: flex; align-items: center; gap: 12px; }
+  .minipill {
+    border: none;
+    border-radius: 999px;
+    background: var(--seg-track);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 150ms ease, transform 120ms var(--ease-out);
+  }
+  .minipill:active { transform: scale(0.96); }
+  .minipill.link { background: transparent; color: var(--green-deep); }
+  @media (hover: hover) and (pointer: fine) {
+    .minipill:hover { background: var(--green-tint); }
+  }
+  .logothumb {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    background-size: cover;
+    background-position: center;
+    background-color: #fff;
+    display: none;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-2);
+    cursor: pointer;
+    user-select: none;
+  }
+  .check input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    border-radius: 6px;
+    border: 1.5px solid rgba(0, 0, 0, 0.18);
+    background: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease;
+  }
+  .check input:checked { background: var(--green); border-color: var(--green); }
+  .check input:checked::before {
+    content: "";
+    width: 11px;
+    height: 9px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10' fill='none'%3E%3Cpath d='M1.5 5.5L4.5 8.5L10.5 1.5' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+
+  /* advanced */
+  details.adv summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  details.adv summary::-webkit-details-marker { display: none; }
+  details.adv summary::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-right: 1.5px solid var(--text-3);
+    border-bottom: 1.5px solid var(--text-3);
+    transform: rotate(45deg);
+    transition: transform 200ms var(--ease-out);
+  }
+  details.adv[open] summary::after { transform: rotate(-135deg); }
+  details.adv .advbody { padding-top: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .range-row { display: flex; align-items: center; gap: 12px; }
+  .range-row .name { font-size: 13px; color: var(--text-2); width: 92px; }
+  .range-row input[type="range"] {
+    flex: 1;
+    appearance: none;
+    -webkit-appearance: none;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--seg-track);
+  }
+  .range-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-thumb);
+    cursor: grab;
+  }
+  .range-row input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-thumb);
+    cursor: grab;
+  }
+  .range-row output { font-family: var(--mono); font-size: 12px; color: var(--text-2); width: 28px; text-align: right; }
+
+  /* ---------- footer ---------- */
+  footer {
+    border-top: 1px solid var(--hairline);
+    margin-top: 88px;
+    padding-top: 24px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+
+  /* ---------- entrance, once ---------- */
+  .rise { opacity: 0; transform: translateY(12px); animation: rise 640ms var(--ease-out) forwards; }
+  .d1 { animation-delay: 70ms; }
+  .d2 { animation-delay: 140ms; }
+  .d3 { animation-delay: 200ms; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .rise { transform: none; animation: fade 300ms ease forwards; }
+    @keyframes fade { to { opacity: 1; } }
+    .pill:active, .gtile:active, .swatch:active, .preset:active .thumbwrap, .minipill:active { transform: none; }
+    .seg .thumb { transition: none; }
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 980px) {
+    .studio { grid-template-columns: 1fr; gap: 32px; }
+    .preview { position: static; order: -1; }
+    .hero { padding-top: 48px; }
+    .linkrow { margin-bottom: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hs">
+  <div class="hs-nav">
+    <a class="mark" href="./" aria-label="enteqr">
+<svg viewBox="55 179 1763 483" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M1375.61 269.453C1403.92 266.181 1439.81 270.964 1468.81 268.816C1480.4 267.955 1497.7 269.122 1508.89 271.816C1522.27 275.046 1534.72 281.355 1545.24 290.242C1558.81 301.661 1568.5 317.012 1572.97 334.176C1578.3 354.357 1576.79 384.778 1576.77 406.661L1576.67 513.173C1576.65 530.721 1575.87 557.299 1577.31 574.185C1607.69 577.358 1643.01 571.034 1673.13 576.131C1707.53 581.955 1707.16 643.929 1671.93 649.68C1654.91 652.458 1633.55 651.081 1615.94 650.92L1574.06 650.976C1551.64 650.889 1530.06 647.96 1513.57 631.107C1491.35 608.395 1493.29 578.489 1493.48 549.294L1421.7 549.332C1404.41 549.356 1382.03 550.248 1365.63 546.995C1352.22 544.419 1339.51 539.043 1328.32 531.219C1308.04 516.926 1294.3 495.137 1290.13 470.681C1287.33 454.368 1287.45 361.877 1290.88 345.102C1293.44 332.161 1298.74 319.913 1306.4 309.173C1323.71 285.027 1347.06 274.075 1375.61 269.453ZM1481.12 351.368C1467.17 344.681 1411.49 347.353 1394.08 347.839C1388.14 349.471 1376.4 354.468 1374.71 360.852C1367.81 386.764 1371.42 426.028 1372.67 452.337C1373.89 478.11 1452.77 471.63 1470.57 470.461C1477.98 468.419 1485.75 465.641 1489.64 458.438C1495.65 447.313 1495.21 377.421 1491.32 365.521C1489.59 360.246 1486.39 353.89 1481.12 351.368Z" fill="#FEFEFE" style="fill:#FEFEFE;fill:color(display-p3 0.9961 0.9961 0.9961);fill-opacity:1;"/>
+<path d="M208.806 265.121C249.095 265.921 274.257 272.318 308.404 300.989C337.62 325.52 377.542 421.453 319.405 437.02C309.691 439.62 274.024 438.452 261.294 438.439L154.795 438.429C155.604 440.564 156.497 442.667 157.467 444.733C173.48 478.53 213.143 482.96 245.699 473.746C263.89 468.597 281.954 453.171 301.522 460.545C313.054 464.89 318.746 473.93 323.534 484.604C325.94 497.214 325.382 510.684 315.825 520.388C292.534 542.541 258.117 549.586 227.027 552.548C91.0459 565.5 16.5373 415.377 101.494 312.363C127.102 281.311 167.988 267.361 208.806 265.121ZM265.256 378.973C254.858 347.444 233.998 338.423 202.461 339.956C179.267 344.114 161.92 355.529 154.56 378.864L219.277 378.995L265.256 378.973Z" fill="#FEFEFE" style="fill:#FEFEFE;fill:color(display-p3 0.9961 0.9961 0.9961);fill-opacity:1;"/>
+<path d="M1009.73 265.143C1048.52 265.705 1079.02 274.26 1109.52 302.342C1136.76 327.423 1164.38 395.626 1136.14 428.261C1123.96 442.341 1082.85 438.412 1063.31 438.412L954.454 438.401C975.961 489.897 1029.34 483.25 1071.47 462.439C1094.76 450.933 1114.25 463.671 1123.2 485.949C1123.66 488.483 1124.18 492.844 1124.33 495.42C1124.89 504.593 1121.7 513.599 1115.48 520.372C1096.01 541.928 1053.68 550.142 1024.47 552.58C888 563.972 816.266 412.619 902.774 310.676C928.633 280.202 968.625 266.813 1009.73 265.143ZM1064.81 378.939C1053.2 347.746 1034.53 338.087 1002.13 339.938C978.643 344.697 962.233 355.219 954.525 378.913L1018.02 378.983L1064.81 378.939Z" fill="#FEFEFE" style="fill:#FEFEFE;fill:color(display-p3 0.9961 0.9961 0.9961);fill-opacity:1;"/>
+<path d="M507.291 265.129C548.496 261.343 595.873 283.013 620.502 316.195C630.631 329.864 637.682 345.563 641.168 362.214C646.53 387.332 643.417 425.417 644.205 452.091C643.664 472.561 645.794 493.737 643.63 514.105C640.835 540.398 616.976 553.758 592.337 548.4C558.98 541.148 560.618 512.762 560.781 486.024L561.142 425.398C561.334 387.69 564.954 354.965 517.451 346.367C461.223 346.253 459.033 377.26 459.316 422.576L459.644 479.382C459.702 490.98 460.641 505.974 458.509 516.918C449.412 563.637 376.622 559.6 375.945 508.946C375.664 487.901 376.204 467.014 376.094 446.24C375.836 397.623 370.405 349.559 406.258 310.575C433.449 279.71 467.238 267.808 507.291 265.129Z" fill="#FEFEFE" style="fill:#FEFEFE;fill:color(display-p3 0.9961 0.9961 0.9961);fill-opacity:1;"/>
+<path d="M717.339 188.869C718.276 188.834 719.213 188.819 720.151 188.823C769.778 188.724 763.273 234.712 763.006 268.9C784.183 269.112 815.432 263.848 831.583 280.158C846.833 294.991 846.658 322.386 831.455 337.191C816.222 352.028 783.534 347.829 763 347.677C763.063 368.508 763.735 400.093 762.766 420.241C758.423 510.565 843.926 435.1 858.368 504.265C858.515 515.868 857.727 524.527 850.595 534.456C845.226 542.081 836.975 547.181 827.754 548.573C821.145 549.556 810.715 549.238 803.825 549.416C774.041 550.16 746.753 545.894 722.362 527.542C678.938 494.869 679.206 452.455 679.247 403.9L679.323 329.542L679.15 263.357C679.061 230.145 673.705 195.201 717.339 188.869Z" fill="#FEFEFE" style="fill:#FEFEFE;fill:color(display-p3 0.9961 0.9961 0.9961);fill-opacity:1;"/>
+<path d="M1717.49 269.516C1728.13 267.961 1748.98 268.387 1759.73 269.427C1780.23 271.413 1794.4 289.57 1792.67 310.448C1788.06 365.767 1738.15 334.579 1709.88 358.863C1693.94 372.671 1699.63 402.436 1698.57 421.005C1698.18 449.181 1699.31 477.305 1698.89 505.464C1698.65 521.858 1694.85 530.633 1683.13 541.811C1657.51 558.347 1618.76 548.537 1615.1 513.906C1614.39 502.703 1613.74 489.38 1614.5 478.261C1616.99 442.18 1610.44 395.105 1617.55 360.511C1620.91 343.409 1628.07 327.281 1638.5 313.32C1658.23 287.285 1685.57 273.843 1717.49 269.516Z" fill="#FEFEFE" style="fill:#FEFEFE;fill:color(display-p3 0.9961 0.9961 0.9961);fill-opacity:1;"/>
+<path d="M1765.3 575.479L1766.35 575.442C1776.59 575.104 1792.82 573.928 1800.44 581.727C1810.67 592.196 1810.46 634.089 1800.19 644.651C1793.72 651.317 1781.54 650.97 1772.75 650.808L1769.33 650.847C1760.92 650.931 1743.58 651.62 1738.75 645.466C1726.91 630.396 1724.14 582.563 1748.25 576.5C1753.19 575.257 1760.45 575.424 1765.3 575.479Z" fill="black" style="fill:black;fill-opacity:1;"/>
+</svg>
+    </a>
+    <span class="nav-note">Private by design</span>
+  </div>
+  <div class="hs-grid">
+    <div class="hl rise">
+      <h1>
+        <span class="l1">Create it,</span>
+        <span class="l2">in seconds.</span>
+      </h1>
+      <p class="hs-sub">Private QR codes, without backlinks. Made right in your browser. <a class="hs-why" href="why">why ente qr?</a></p>
+      <form class="hs-form" id="heroForm">
+        <label for="data" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Link or text</label>
+        <input id="data" type="text" value="" spellcheck="false" autocomplete="off"
+               placeholder="Paste or type your link">
+        <button type="submit" aria-label="Generate QR code">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.5 10 H16"/><path d="M10.5 4.5 L16 10 L10.5 15.5"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+    <div class="art rise d2" aria-hidden="true">
+      <div class="floaty"><div class="artcard"><div id="heroQR"></div><div class="sheen"></div></div></div>
+      <span class="chip ads">NO ADS</span>
+      <span class="chip track">NO TRACKING</span>
+      <span class="chip signup">NO SIGN-UPS</span>
+      <span class="scrib2">yours<br>instantly :)
+        <svg width="30" height="34" viewBox="0 0 30 34" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3 C 22 9, 24 19, 15 29"/>
+          <path d="M8 23 L15 30 L23 24"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+  <a class="chip-ente" href="https://ente.com" target="_blank" rel="noopener" aria-label="ente.com">
+<svg viewBox="0 0 442 67" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M421.262 8.51562C433.951 8.51562 442.007 17.1225 442.007 31.4673V65.2329H423.579V33.5639C423.579 28.8191 421.372 25.8398 416.738 25.8398C411.551 25.8398 409.124 29.5915 409.124 35.1087V65.2329H390.807V33.5639C390.807 28.8191 388.489 25.8398 383.855 25.8398C378.779 25.8398 376.241 29.5915 376.241 35.1087V65.2329H357.924V10.0605H376.241V15.2467C379.22 11.2742 384.076 8.51562 391.138 8.51562C397.648 8.51562 402.282 11.0536 405.262 15.5777C408.682 11.3846 413.648 8.51562 421.262 8.51562Z" fill="currentColor"/>
+<path d="M323.716 66.7777C307.495 66.7777 294.254 54.088 294.254 37.6467C294.254 21.2053 307.385 8.51562 323.716 8.51562C340.157 8.51562 353.178 21.2053 353.178 37.6467C353.178 54.088 340.157 66.7777 323.716 66.7777ZM323.716 49.1225C330.116 49.1225 334.861 44.488 334.861 37.6467C334.861 30.8053 330.116 26.1708 323.716 26.1708C317.426 26.1708 312.681 30.8053 312.681 37.6467C312.681 44.488 317.426 49.1225 323.716 49.1225Z" fill="currentColor"/>
+<path d="M270.235 66.7777C253.463 66.7777 240.883 54.088 240.883 37.6467C240.883 21.2053 253.463 8.51562 270.235 8.51562C281.159 8.51562 290.649 14.1432 295.394 22.7501L279.725 31.7984C277.959 28.5984 274.428 26.3915 270.125 26.3915C263.945 26.3915 259.311 31.026 259.311 37.6467C259.311 44.2673 263.945 48.9018 270.125 48.9018C274.428 48.9018 278.07 46.6949 279.725 43.3846L295.394 52.4329C290.649 61.1501 281.159 66.7777 270.235 66.7777Z" fill="currentColor"/>
+<path d="M230.067 66.7759C223.667 66.7759 218.48 61.7001 218.48 55.3001C218.48 49.0104 223.667 43.8242 230.067 43.8242C236.356 43.8242 241.543 49.0104 241.543 55.3001C241.543 61.7001 236.356 66.7759 230.067 66.7759Z" fill="currentColor"/>
+<path d="M177.69 44.3777C179.897 49.6742 184.752 51.1087 190.049 51.1087C194.021 51.1087 197.442 49.7846 200.09 47.2467L213.332 56.5156C207.814 63.4673 199.428 66.7777 189.607 66.7777C170.518 66.7777 158.711 54.088 158.711 37.757C158.711 21.2053 170.849 8.51562 188.063 8.51562C204.614 8.51562 216.532 20.9846 216.532 37.5363C216.532 39.8536 216.311 42.0604 215.759 44.3777H177.69ZM177.47 31.688H198.656C197.001 25.9501 192.697 23.9639 188.283 23.9639C182.987 23.9639 179.014 26.6122 177.47 31.688Z" fill="currentColor"/>
+<path d="M157.174 27.6054H145.698V43.6054C145.698 48.7916 149.781 49.1226 157.174 48.6812V65.233C134.664 67.9916 127.381 61.0399 127.381 44.0468V27.6054H119.105V10.0606H127.381V0.129514L145.698 0V10.0606H157.174V27.6054Z" fill="currentColor"/>
+<path d="M96.0316 8.51562C107.397 8.51562 116.335 16.3501 116.335 32.2398V65.2329H98.0178V34.557C98.0178 28.5984 94.4868 25.8398 89.742 25.8398C84.1144 25.8398 80.6937 29.2605 80.6937 35.8811V65.2329H62.3765V10.0605H80.6937V15.5777C83.7834 11.1639 89.1903 8.51562 96.0316 8.51562Z" fill="currentColor"/>
+<path d="M18.9793 44.3777C21.1862 49.6742 26.0414 51.1087 31.3379 51.1087C35.3103 51.1087 38.731 49.7846 41.3793 47.2467L54.6207 56.5156C49.1034 63.4673 40.7172 66.7777 30.8966 66.7777C11.8069 66.7777 0 54.088 0 37.757C0 21.2053 12.1379 8.51562 29.3517 8.51562C45.9034 8.51562 57.8207 20.9846 57.8207 37.5363C57.8207 39.8536 57.6 42.0604 57.0483 44.3777H18.9793ZM18.7586 31.688H39.9448C38.2897 25.9501 33.9862 23.9639 29.5724 23.9639C24.2759 23.9639 20.3034 26.6122 18.7586 31.688Z" fill="currentColor"/>
+</svg>
+  </a>
+</section>
+
+<div class="sheet-back" id="sheetBack"></div>
+<div class="sheet" id="shareSheet" role="dialog" aria-modal="true" aria-label="Share your QR">
+  <div class="sheet-grab"></div>
+  <button class="sheet-close" id="sheetClose" type="button" aria-label="Close">
+    <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+  </button>
+  <h3>Share your QR</h3>
+  <img id="storyPreview" alt="Story preview">
+  <input class="textfield" type="text" id="storyCaption" maxlength="40" value="Scan me :)" placeholder="Add a message (optional)" spellcheck="false">
+  <div class="sheet-actions">
+    <button class="pill primary" id="storyShare" type="button">Share</button>
+    <button class="pill" id="storySave" type="button">Save image</button>
+  </div>
+</div>
+
+<div id="studioWrap" hidden>
+<div class="wrap">
+
+  <main class="studio">
+
+    <section class="preview rise d2" aria-label="QR preview">
+      <div class="tile"><div id="qr"></div></div>
+      <div class="dlrow">
+        <button class="pill primary" id="dlPng" type="button">
+          <svg class="mi" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <line x1="7" y1="2.2" x2="7" y2="9.8"></line>
+            <line x1="3.6" y1="6.4" x2="7" y2="9.8"></line>
+            <line x1="10.4" y1="6.4" x2="7" y2="9.8"></line>
+          </svg>
+          <span class="lbl" id="dlPngLabel">Download</span>
+        </button>
+        <button class="pill" id="dlSvg" type="button">SVG</button>
+        <button class="pill quiet" id="copyBtn" type="button"><span class="lbl">Copy</span></button>
+        <button class="share-round" id="shareBtn" type="button" aria-label="Share your QR">
+          <svg width="17" height="17" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 1.5v8"/><path d="M4 4l3-2.8L10 4"/><path d="M2.5 7v4.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7"/>
+          </svg>
+        </button>
+        <select id="exportSize" aria-label="Export size">
+          <option value="512">512 px</option>
+          <option value="1024" selected>1024 px</option>
+          <option value="2048">2048 px</option>
+        </select>
+      </div>
+      <p class="hint">High contrast scans best. Test at arm's length.</p>
+    </section>
+
+    <section class="controls rise d3" aria-label="Style controls">
+
+      <div class="card">
+        <h2>Styles</h2>
+        <div class="presets" id="presets" role="radiogroup" aria-label="Style preset"></div>
+      </div>
+
+      <div class="card">
+        <h2>Shape</h2>
+        <div class="tiles" id="dotTiles" role="radiogroup" aria-label="Module shape"></div>
+        <p class="rowlabel">Corners</p>
+        <div class="tiles" id="frameTiles" role="radiogroup" aria-label="Corner frame shape"></div>
+        <p class="rowlabel">Eye</p>
+        <div class="tiles" id="eyeTiles" role="radiogroup" aria-label="Corner eye shape"></div>
+      </div>
+
+      <div class="card">
+        <h2>Colors</h2>
+        <p class="rowlabel">Code</p>
+        <div class="swrow">
+          <div class="swatches" id="swDots" role="radiogroup" aria-label="Code color"></div>
+          <input class="hexfield" type="text" id="hDots" value="#171b19" maxlength="7" aria-label="Code color hex">
+        </div>
+        <p class="rowlabel">Eyes</p>
+        <div class="swrow">
+          <div class="swatches" id="swCorner" role="radiogroup" aria-label="Eye color"></div>
+          <input class="hexfield" type="text" id="hCorner" value="#00b33c" maxlength="7" aria-label="Eye color hex">
+        </div>
+        <p class="rowlabel">Background</p>
+        <div class="swrow">
+          <div class="swatches" id="swBg" role="radiogroup" aria-label="Background color"></div>
+          <input class="hexfield" type="text" id="hBg" value="#ffffff" maxlength="7" aria-label="Background color hex">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Frame</h2>
+        <div class="tiles" id="frameKindTiles" role="radiogroup" aria-label="Frame style"></div>
+        <input class="textfield" type="text" id="frameLabel" value="SCAN ME" maxlength="24" aria-label="Frame label text" hidden>
+      </div>
+
+      <div class="card">
+        <details class="adv">
+          <summary>Logo</summary>
+          <div class="advbody">
+        <div class="logorow">
+          <span class="logothumb" id="logoThumb"></span>
+          <button class="minipill" id="logoBtn" type="button">Add logo</button>
+          <button class="minipill link" id="logoClear" type="button" hidden>Remove</button>
+          <input type="file" id="logoFile" accept="image/*" hidden>
+        </div>
+        <div id="logoOpts" hidden>
+          <p class="rowlabel">Shape</p>
+          <div class="tiles" id="logoShapeTiles" role="radiogroup" aria-label="Logo shape"></div>
+          <div class="range-row" style="margin-top: 16px">
+            <span class="name">Size</span>
+            <input type="range" id="logoSizeRange" min="20" max="42" step="2" value="32" aria-label="Logo size">
+            <output id="logoSizeOut">32</output>
+          </div>
+          <div class="range-row" style="margin-top: 10px">
+            <span class="name">Padding</span>
+            <input type="range" id="logoPadRange" min="0" max="16" step="2" value="6" aria-label="Logo padding">
+            <output id="logoPadOut">6</output>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="logoChip">
+            White backing
+          </label>
+        </div>
+        <label class="check" id="logoGapRow" hidden>
+          <input type="checkbox" id="logoGap" checked>
+          Clear space behind logo
+        </label>
+          </div>
+        </details>
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+</div>
+
+<!-- hidden native color pickers, opened by the wheel swatches -->
+<input type="color" id="cDots" value="#171B19" hidden>
+<input type="color" id="cCorner" value="#00B33C" hidden>
+<input type="color" id="cBg" value="#FFFFFF" hidden>
+
+<script src="vendor/qr-code-styling.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var PREVIEW = 360;
+
+  var state = {
+    data: "",
+    dotType: "rounded",
+    frameType: "extra-rounded",
+    eyeType: "dot",
+    dots: "#171B19",
+    corner: "#00B33C",
+    bg: "#FFFFFF",
+    dotsGradient: null,
+    logo: null,
+    logoImg: null,
+    logoShape: "rounded",
+    logoSize: 32,
+    logoPad: 6,
+    logoChip: false,
+    logoGap: true,
+    frame: "none",
+    frameLabel: "SCAN ME",
+    ec: "Q",
+    margin: 8
+  };
+
+  var PRESETS = [
+    { name: "Rounded", dotType: "rounded",       frameType: "extra-rounded", eyeType: "dot",
+      dots: "#171B19", corner: "#00B33C", bg: "#FFFFFF", dotsGradient: null },
+    { name: "Ink",    dotType: "square",         frameType: "square",        eyeType: "square",
+      dots: "#000000", corner: "#000000", bg: "#FFFFFF", dotsGradient: null },
+    { name: "Bloom",  dotType: "dots",           frameType: "extra-rounded", eyeType: "dot",
+      dots: "#00B33C", corner: "#087A4C", bg: "#FFFFFF",
+      dotsGradient: { type: "linear", rotation: Math.PI / 4, colorStops: [
+        { offset: 0, color: "#00B33C" }, { offset: 1, color: "#0AC2A5" } ] } }
+  ];
+
+  var DOT_TYPES = [
+    ["square", "Square", "0"],
+    ["rounded", "Rounded", "3px"],
+    ["dots", "Dots", "50%"],
+    ["classy", "Classy", "0 6px 6px 6px"]
+  ];
+  var FRAME_TYPES = [["square", "Square", "0"], ["extra-rounded", "Rounded", "7px"], ["dot", "Dot", "50%"]];
+  var EYE_TYPES = [["square", "Square", "0"], ["dot", "Dot", "50%"]];
+
+  var SWATCHES = {
+    Dots:   ["#171B19", "#000000", "#0B3D2E", "#1E3A8A", "#7C2D12", "#EAF5EC"],
+    Corner: ["#00B33C", "#171B19", "#12D45C", "#1E3A8A", "#B45309", "#EAF5EC"],
+    Bg:     ["#FFFFFF", "#F3F7F1", "#FDF6EC", "#F2F2F7", "#10140F", "#0B1220"]
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var mount = $("qr");
+
+  /* the vendored lib's byte mode is not UTF-8 aware: pre-encode so
+     emoji/CJK/accents scan correctly instead of as mojibake */
+  function toUtf8(s) {
+    try { return unescape(encodeURIComponent(s)); } catch (e) { return s; }
+  }
+
+  function buildOptions(size, type) {
+    var dotsOptions = { type: state.dotType };
+    if (state.dotsGradient) { dotsOptions.gradient = state.dotsGradient; }
+    else { dotsOptions.color = state.dots; }
+    var scale = size / PREVIEW;
+    var opts = {
+      width: size,
+      height: size,
+      type: type || "svg",
+      data: toUtf8(state.data),
+      margin: Math.round(state.margin * scale),
+      qrOptions: { errorCorrectionLevel: state.ec },
+      dotsOptions: dotsOptions,
+      backgroundOptions: { color: state.bg },
+      cornersSquareOptions: { type: state.frameType, color: state.dots },
+      cornersDotOptions: { type: state.eyeType, color: state.corner }
+    };
+    if (state.logo) {
+      opts.image = state.logo;
+      opts.imageOptions = {
+        margin: Math.round(state.logoPad * scale),
+        imageSize: state.logoSize / 100,
+        hideBackgroundDots: state.logoGap,
+        crossOrigin: "anonymous"
+      };
+    }
+    return opts;
+  }
+
+  /* ---------- frame composition: frames live in the SVG, so exports include them ---------- */
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function svgNode(tag, attrs) {
+    var e = document.createElementNS(SVGNS, tag);
+    Object.keys(attrs).forEach(function (a) { e.setAttribute(a, attrs[a]); });
+    return e;
+  }
+  function frameText(txt, x, y, size, fill, maxW) {
+    if (maxW && txt.length * size * 0.68 > maxW) {
+      size = Math.max(10, maxW / (txt.length * 0.68));
+    }
+    var t = svgNode("text", {
+      x: x, y: y, fill: fill, "text-anchor": "middle",
+      "font-family": "'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      "font-size": size, "font-weight": 900, "letter-spacing": (-0.02 * size).toFixed(2),
+      "data-maxw": maxW || ""
+    });
+    t.textContent = txt;
+    return t;
+  }
+  /* exports rasterize in an isolated svg: embed Gilroy so labels keep the brand font */
+  var _gilroyB64 = null;
+  function gilroyB64() {
+    if (!_gilroyB64) {
+      _gilroyB64 = fetch("fonts/gilroy-heavy.woff2").then(function (r) {
+        return r.arrayBuffer();
+      }).then(function (buf) {
+        var bytes = new Uint8Array(buf);
+        var bin = "";
+        for (var i = 0; i < bytes.length; i++) { bin += String.fromCharCode(bytes[i]); }
+        return btoa(bin);
+      });
+    }
+    return _gilroyB64;
+  }
+  function positionQR(svg, x, y, size) {
+    svg.setAttribute("x", x);
+    svg.setAttribute("y", y);
+    svg.setAttribute("width", size);
+    svg.setAttribute("height", size);
+  }
+  function frameSnap() {
+    return { frame: state.frame, label: state.frameLabel, fg: state.dots, bg: state.bg };
+  }
+  /* wraps the QR svg per the snapshot; k scales metrics for export sizes */
+  function composeFrame(qrSvg, k, snap) {
+    var S = snap || frameSnap();
+    var Q = PREVIEW * k;
+    if (S.frame === "none") {
+      qrSvg.__w = Q; qrSvg.__h = Q;
+      return qrSvg;
+    }
+    var label = (S.label || "").trim();
+    var fg = S.fg, bg = S.bg;
+    var wrap, W, H;
+    if (S.frame === "caption") {
+      var pad = 26 * k;
+      var gap = label ? 30 * k : 0;
+      var baseline = pad + Q + gap + 19 * k;
+      W = Q + 2 * pad;
+      H = label ? baseline + pad - 12 * k : Q + 2 * pad;
+      wrap = svgNode("svg", { xmlns: SVGNS, viewBox: "0 0 " + W + " " + H, width: W, height: H });
+      wrap.appendChild(svgNode("rect", { x: 0, y: 0, width: W, height: H, fill: bg }));
+      positionQR(qrSvg, pad, pad, Q);
+      wrap.appendChild(qrSvg);
+      if (label) { wrap.appendChild(frameText(label, W / 2, baseline, 26 * k, fg, W - 2 * pad)); }
+    } else if (S.frame === "tag") {
+      var B = 12 * k, P = 24 * k, LT = label ? 54 * k : 0;
+      W = Q + 2 * (B + P); H = Q + 2 * (B + P) + LT;
+      wrap = svgNode("svg", { xmlns: SVGNS, viewBox: "0 0 " + W + " " + H, width: W, height: H });
+      wrap.appendChild(svgNode("rect", {
+        x: B / 2, y: B / 2, width: W - B, height: H - B, rx: 40 * k,
+        fill: bg, stroke: fg, "stroke-width": B
+      }));
+      positionQR(qrSvg, B + P, B + P, Q);
+      wrap.appendChild(qrSvg);
+      if (label) { wrap.appendChild(frameText(label, W / 2, B + P + Q + LT * 0.72, 26 * k, fg, W - 2 * B - 24 * k)); }
+    } else { /* card */
+      var P2 = 30 * k, TP = 14 * k, LC = label ? 58 * k : 0;
+      W = Q + 2 * (P2 + TP); H = W + LC;
+      wrap = svgNode("svg", { xmlns: SVGNS, viewBox: "0 0 " + W + " " + H, width: W, height: H });
+      wrap.appendChild(svgNode("rect", {
+        x: 0.5 * k, y: 0.5 * k, width: W - k, height: H - k, rx: 48 * k,
+        fill: fg, stroke: "rgba(0,0,0,0.10)", "stroke-width": k
+      }));
+      wrap.appendChild(svgNode("rect", {
+        x: P2, y: P2, width: Q + 2 * TP, height: Q + 2 * TP, rx: 28 * k, fill: bg
+      }));
+      positionQR(qrSvg, P2 + TP, P2 + TP, Q);
+      wrap.appendChild(qrSvg);
+      if (label) {
+        var innerBottom = P2 + Q + 2 * TP;
+        wrap.appendChild(frameText(label, W / 2, innerBottom + (H - innerBottom) * 0.62, 26 * k, bg, W - 48 * k));
+      }
+    }
+    wrap.__w = W; wrap.__h = H;
+    return wrap;
+  }
+
+  /* adjacent modules leave AA hairlines; a self-colored half-pixel stroke seals them */
+  function sealSeams(svg) {
+    if (state.dotsGradient) { return; }
+    var bg = (state.bg || "").toLowerCase();
+    svg.querySelectorAll("rect, path, circle").forEach(function (el) {
+      var f = (el.getAttribute("fill") || "").toLowerCase();
+      if (!f || f === "none" || f === bg) { return; }
+      el.setAttribute("stroke", f);
+      el.setAttribute("stroke-width", "0.6");
+    });
+  }
+
+  /* soft swap: old fades out through the white tile, new fades in with a
+     hair of scale settle. Sequential, never overlapped, never per-module. */
+  var morphBusy = false, pendingLand = null;
+  function finishPending() {
+    var f = pendingLand;
+    pendingLand = null;
+    morphBusy = false;
+    if (f) { f(); }
+  }
+  function softSwap(oldSvg, newRoot) {
+    if (morphBusy) { mount.replaceChildren(newRoot); return; }
+    morphBusy = true;
+    mount.querySelectorAll(".mout, p.empty").forEach(function (n) { n.remove(); });
+    oldSvg.classList.add("mout");
+    newRoot.style.display = "none";
+    mount.appendChild(newRoot);
+    oldSvg.style.transition = "opacity 90ms ease-in";
+    oldSvg.style.opacity = "0";
+    setTimeout(function () {
+      oldSvg.remove();
+      newRoot.style.display = "";
+      newRoot.style.opacity = "0";
+      newRoot.style.transformOrigin = "center";
+      newRoot.style.transform = "scale(0.985)";
+      void newRoot.getBoundingClientRect();
+      newRoot.style.transition = "opacity 160ms ease-out, transform 160ms cubic-bezier(0.23, 1, 0.32, 1)";
+      newRoot.style.opacity = "1";
+      newRoot.style.transform = "";
+      setTimeout(function () {
+        newRoot.style.transition = "";
+        newRoot.style.opacity = "";
+        newRoot.style.transform = "";
+        newRoot.style.transformOrigin = "";
+        morphBusy = false;
+      }, 190);
+    }, 95);
+    /* throttled-tab safety */
+    setTimeout(function () {
+      if (oldSvg.parentNode) { oldSvg.remove(); }
+      newRoot.style.display = "";
+      newRoot.style.opacity = "";
+      morphBusy = false;
+    }, 420);
+  }
+
+  /* ---------- colour-only tween: the code never rebuilds, fills glide ---------- */
+  var lastPaint = null, lastGeom = null;
+  function geomSig() {
+    return [state.data, state.dotType, state.frameType, state.eyeType, state.frame,
+      (state.frameLabel || "").trim(), state.logo ? "1" : "0", state.logoShape,
+      state.logoSize, state.logoPad, state.logoChip, state.logoGap, state.ec,
+      state.margin, state.dotsGradient ? "g" : ""].join("|");
+  }
+  function paintSig() {
+    return [state.dots, state.corner, state.bg].join("|").toUpperCase();
+  }
+  function tintTween(prev) {
+    var svg = mount.querySelector(":scope > svg:not(.mout)");
+    if (!svg) { return false; }
+    var was = prev.split("|"), now = paintSig().split("|");
+    /* role comes from the clip reference, so Ink (code and eyes both black)
+       still tweens instead of falling back to a rebuild */
+    function roleOf(el) {
+      var cp = el.getAttribute("clip-path") || "";
+      if (cp.indexOf("background-color") !== -1) { return 2; }
+      if (cp.indexOf("corners-dot-color") !== -1) { return 1; }
+      if (cp.indexOf("corners-square-color") !== -1) { return 0; }
+      if (cp.indexOf("dot-color") !== -1) { return 0; }
+      return -1;
+    }
+    var quiet = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var ease = "260ms cubic-bezier(0.23, 1, 0.32, 1)";
+    var touched = false;
+    svg.querySelectorAll("rect, path, circle, ellipse, polygon, text").forEach(function (el) {
+      var fill = (el.getAttribute("fill") || "").toUpperCase();
+      var line = (el.getAttribute("stroke") || "").toUpperCase();
+      var role = roleOf(el);
+      if (role === -1) {
+        /* frame furniture: the label paints in the code colour, the card in
+           the background colour */
+        for (var i = 0; i < 3; i++) {
+          if (fill === was[i] || line === was[i]) { role = i; break; }
+        }
+      }
+      if (role === -1 || was[role] === now[role]) { return; }
+      var hitF = fill === was[role], hitL = line === was[role];
+      if (!hitF && !hitL) { return; }
+      touched = true;
+      if (!quiet) { el.style.transition = "fill " + ease + ", stroke " + ease; }
+      if (hitF) { el.setAttribute("fill", now[role]); }
+      if (hitL) { el.setAttribute("stroke", now[role]); }
+      if (!quiet) { setTimeout(function () { el.style.transition = ""; }, 330); }
+    });
+    return touched;
+  }
+
+  /* ---------- frame swap: the canvas resizes, so dissolve and glide ---------- */
+  function crossSwap(oldSvg, newRoot) {
+    if (morphBusy) {
+      finishPending();
+      oldSvg = mount.querySelector(":scope > svg:not(.mout)");
+      if (!oldSvg) { mount.replaceChildren(newRoot); return; }
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || document.hidden) {
+      mount.replaceChildren(newRoot);
+      return;
+    }
+    morphBusy = true;
+    var fromH = mount.getBoundingClientRect().height;
+    mount.appendChild(newRoot);
+    newRoot.style.opacity = "0";
+    var toH = newRoot.getBoundingClientRect().height || fromH;
+    oldSvg.style.position = "absolute";
+    oldSvg.style.top = "0";
+    oldSvg.style.left = "0";
+    oldSvg.style.pointerEvents = "none";
+    mount.style.height = fromH + "px";
+    void mount.getBoundingClientRect();
+    mount.style.transition = "height 260ms cubic-bezier(0.23, 1, 0.32, 1)";
+    mount.style.height = toH + "px";
+    oldSvg.style.transition = "opacity 170ms ease-in";
+    oldSvg.style.opacity = "0";
+    newRoot.style.transition = "opacity 240ms cubic-bezier(0.23, 1, 0.32, 1) 60ms";
+    newRoot.style.opacity = "1";
+    var done = false;
+    function settle() {
+      if (done) { return; }
+      done = true;
+      if (pendingLand === settle) { pendingLand = null; }
+      if (oldSvg.parentNode) { oldSvg.remove(); }
+      mount.style.transition = "";
+      mount.style.height = "";
+      newRoot.style.transition = "";
+      newRoot.style.opacity = "";
+      morphBusy = false;
+    }
+    pendingLand = settle;
+    setTimeout(settle, 330);
+  }
+
+  /* ---------- style swap: the new style spreads out from the centre ---------- */
+  var swapSeq = 0;
+  function radialSwap(oldSvg, newRoot) {
+    if (morphBusy) {
+      finishPending();
+      oldSvg = mount.querySelector(":scope > svg:not(.mout)");
+      if (!oldSvg) { mount.replaceChildren(newRoot); return; }
+    }
+    /* with a logo the library paints the code asynchronously: lifting its
+       children out now would strip an artwork that has not been drawn yet */
+    if (state.logo) { crossSwap(oldSvg, newRoot); return; }
+    var vb = oldSvg.getAttribute("viewBox");
+    if (!vb || vb !== newRoot.getAttribute("viewBox")) { crossSwap(oldSvg, newRoot); return; }
+    var box = vb.split(/[ ,]+/).map(Number);
+    if (box.length !== 4 || !box[2]) { crossSwap(oldSvg, newRoot); return; }
+    morphBusy = true;
+    var tick = ++swapSeq;
+    var NS = "http://www.w3.org/2000/svg";
+    var cx = box[0] + box[2] / 2, cy = box[1] + box[3] / 2;
+    var maxR = Math.sqrt(box[2] * box[2] + box[3] * box[3]) / 2;
+
+    /* qr-code-styling reuses clip ids across instances: rename before merging
+       or the new artwork clips against the old geometry */
+    var newDefs = newRoot.querySelector("defs");
+    if (newDefs) {
+      var renamed = [];
+      newDefs.querySelectorAll("[id]").forEach(function (node) {
+        var was = node.getAttribute("id");
+        var now = was + "-s" + tick;
+        node.setAttribute("id", now);
+        renamed.push([was, now]);
+      });
+      if (renamed.length) {
+        /* every reference moves with it: clip-path, mask, filter and the
+           url(#gradient) fills the Bloom preset paints its modules with */
+        var scope = [].slice.call(newRoot.querySelectorAll("*"));
+        scope.push(newRoot);
+        /* the library writes url('#id') WITH quotes: match every spelling or
+           the reference dangles and the rect paints unclipped */
+        var refs = renamed.map(function (pair) {
+          return [new RegExp("url\\(\\s*['\"]?#" + pair[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "['\"]?\\s*\\)", "g"), "url(#" + pair[1] + ")", pair[0], pair[1]];
+        });
+        scope.forEach(function (el) {
+          [].slice.call(el.attributes).forEach(function (attr) {
+            var v = attr.value, out = v;
+            if (v.indexOf("url(") !== -1) {
+              refs.forEach(function (r) { out = out.replace(r[0], r[1]); });
+            } else if (v.charAt(0) === "#") {
+              refs.forEach(function (r) { if (v === "#" + r[2]) { out = "#" + r[3]; } });
+            }
+            if (out !== v) { el.setAttribute(attr.name, out); }
+          });
+        });
+      }
+      oldSvg.appendChild(newDefs);
+    }
+
+    var clip = document.createElementNS(NS, "clipPath");
+    clip.setAttribute("id", "spread-" + tick);
+    var disc = document.createElementNS(NS, "circle");
+    disc.setAttribute("cx", cx);
+    disc.setAttribute("cy", cy);
+    disc.setAttribute("r", "0");
+    clip.appendChild(disc);
+    (oldSvg.querySelector("defs") || oldSvg.insertBefore(document.createElementNS(NS, "defs"), oldSvg.firstChild)).appendChild(clip);
+
+    var lid = document.createElementNS(NS, "g");
+    lid.setAttribute("clip-path", "url(#spread-" + tick + ")");
+    [].slice.call(newRoot.children).forEach(function (el) {
+      if (el.tagName.toLowerCase() !== "defs") { lid.appendChild(el); }
+    });
+    oldSvg.appendChild(lid);
+
+    var oldKids = [].slice.call(oldSvg.children).filter(function (el) {
+      return el !== lid && el.tagName.toLowerCase() !== "defs";
+    });
+
+    var landed = false, raf = 0;
+    function land() {
+      /* a stale frame from a swap that already finished must never run this
+         twice: the second pass deletes the artwork now on screen */
+      if (landed) { return; }
+      landed = true;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (pendingLand === land) { pendingLand = null; }
+      oldKids.forEach(function (el) { if (el.parentNode) { el.remove(); } });
+      var stale = oldSvg.querySelectorAll("defs");
+      for (var i = 0; i < stale.length - 1; i++) { stale[i].remove(); }
+      lid.removeAttribute("clip-path");
+      if (clip.parentNode) { clip.remove(); }
+      while (lid.firstChild) { oldSvg.appendChild(lid.firstChild); }
+      lid.remove();
+      morphBusy = false;
+    }
+    pendingLand = land;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || document.hidden) {
+      land();
+      return;
+    }
+    var DUR = 420, t0 = 0;
+    function step(now) {
+      if (landed) { return; }
+      if (!t0) { t0 = now; }
+      var k = Math.min(1, (now - t0) / DUR);
+      var e = 1 - Math.pow(1 - k, 3);
+      disc.setAttribute("r", (e * maxR).toFixed(2));
+      if (k < 1) { raf = requestAnimationFrame(step); } else { land(); }
+    }
+    raf = requestAnimationFrame(step);
+    /* throttled-tab safety */
+    setTimeout(land, DUR + 260);
+  }
+
+  var renderTimer = null;
+  function render(immediate, morph) {
+    if (lastPaint && lastGeom === geomSig() && state.data.trim() && mount.querySelector(":scope > svg")) {
+      /* tapping the same tile twice must not rebuild anything */
+      if (paintSig() === lastPaint) { return; }
+      if (tintTween(lastPaint)) { lastPaint = paintSig(); return; }
+      /* gradient presets paint modules with url(#gradient), so there is no
+         fill to tween: dissolve rather than flash a rebuild */
+      morph = true;
+    }
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(function () {
+      if (!state.data.trim()) {
+        mount.innerHTML = '<p class="empty">Paste a link above to generate your code.</p>';
+        return;
+      }
+      /* full re-instantiation every render: no deep-merge ghosts from update() */
+      var temp = document.createElement("div");
+      try {
+        var qr = new QRCodeStyling(buildOptions(PREVIEW, "svg"));
+        qr.append(temp);
+      } catch (err) {
+        /* code length overflow: too many bytes for one QR */
+        mount.innerHTML = '<p class="empty">Too much text for one QR code. Shorten it, or lower the error correction in Advanced.</p>';
+        return;
+      }
+      var qrSvg = temp.querySelector("svg");
+      if (!qrSvg) { mount.innerHTML = ""; return; }
+      /* scale with the tile on small screens */
+      if (!qrSvg.getAttribute("viewBox")) {
+        qrSvg.setAttribute("viewBox", "0 0 " + PREVIEW + " " + PREVIEW);
+      }
+      sealSeams(qrSvg);
+      var root = composeFrame(qrSvg, 1);
+      var old = mount.querySelector(":scope > svg:not(.mout)");
+      if (morph && old && !window.matchMedia("(prefers-reduced-motion: reduce)").matches && !document.hidden) {
+        radialSwap(old, root);
+      } else {
+        /* different content: swap straight in at full opacity, no flash */
+        mount.replaceChildren(root);
+      }
+      lastGeom = geomSig();
+      lastPaint = paintSig();
+    }, immediate ? 0 : 90);
+  }
+
+  /* ---------- radio semantics: aria-checked + roving tabindex + arrow keys ---------- */
+  function setChecked(btns, idx) {
+    btns.forEach(function (b, i) {
+      b.setAttribute("aria-checked", i === idx ? "true" : "false");
+      b.tabIndex = i === idx ? 0 : -1;
+    });
+    if (idx < 0 && btns.length) { btns[0].tabIndex = 0; }
+  }
+  function radioKeys(container) {
+    container.addEventListener("keydown", function (e) {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].indexOf(e.key) === -1) return;
+      var items = [].slice.call(container.querySelectorAll('[role="radio"]'));
+      var i = items.indexOf(document.activeElement);
+      if (i === -1) return;
+      e.preventDefault();
+      var dir = (e.key === "ArrowRight" || e.key === "ArrowDown") ? 1 : -1;
+      var next = items[(i + dir + items.length) % items.length];
+      next.focus();
+      next.click();
+    });
+  }
+
+  /* ---------- glyph tile groups ---------- */
+  function tileGroup(el, options, kind, get, set) {
+    var btns = [];
+    options.forEach(function (opt) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "gtile";
+      btn.title = opt[1];
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-label", opt[1]);
+      if (kind === "grid") {
+        var g = document.createElement("span");
+        g.className = "glyph";
+        for (var i = 0; i < 4; i++) {
+          var dot = document.createElement("i");
+          dot.style.borderRadius = opt[2];
+          g.appendChild(dot);
+        }
+        btn.appendChild(g);
+      } else {
+        var one = document.createElement("span");
+        one.className = "glyph-one";
+        one.style.borderRadius = opt[2];
+        if (kind === "ring") {
+          one.style.border = "3.5px solid var(--text)";
+        } else {
+          one.style.background = "var(--text)";
+          one.style.width = "14px";
+          one.style.height = "14px";
+        }
+        btn.appendChild(one);
+      }
+      btn.addEventListener("click", function () {
+        set(opt[0]);
+        setChecked(btns, btns.indexOf(btn));
+        render(true, true);
+      });
+      el.appendChild(btn);
+      btns.push(btn);
+    });
+    el._sync = function (value) {
+      var idx = -1;
+      options.forEach(function (opt, i) { if (opt[0] === value) idx = i; });
+      setChecked(btns, idx);
+    };
+    el._sync(get());
+    radioKeys(el);
+  }
+
+  tileGroup($("dotTiles"), DOT_TYPES, "grid",
+    function () { return state.dotType; },
+    function (v) { state.dotType = v; state.dotsGradient = null; markPreset(null); });
+  tileGroup($("frameTiles"), FRAME_TYPES, "ring",
+    function () { return state.frameType; },
+    function (v) { state.frameType = v; markPreset(null); });
+  tileGroup($("eyeTiles"), EYE_TYPES, "dotfill",
+    function () { return state.eyeType; },
+    function (v) { state.eyeType = v; markPreset(null); });
+
+  /* ---------- frame kinds ---------- */
+  function miniGlyph() {
+    var g = document.createElement("span");
+    g.className = "glyph";
+    for (var i = 0; i < 4; i++) {
+      var d = document.createElement("i");
+      d.style.borderRadius = "3px";
+      g.appendChild(d);
+    }
+    return g;
+  }
+  function frameGlyph(kind) {
+    var el = document.createElement("span");
+    if (kind === "none") {
+      var g = miniGlyph();
+      g.style.opacity = "0.35";
+      return g;
+    }
+    if (kind === "caption") {
+      el.className = "fg-caption";
+      el.appendChild(miniGlyph());
+      el.appendChild(document.createElement("b"));
+    } else if (kind === "tag") {
+      el.className = "fg-outline";
+      el.appendChild(miniGlyph());
+    } else {
+      el.className = "fg-card";
+      el.appendChild(document.createElement("i"));
+    }
+    return el;
+  }
+  (function () {
+    var FRAME_KINDS = [["none", "No frame"], ["caption", "Caption"], ["tag", "Tag"], ["card", "Card"]];
+    var host = $("frameKindTiles");
+    var btns = [];
+    FRAME_KINDS.forEach(function (opt) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "gtile";
+      btn.title = opt[1];
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-label", opt[1]);
+      btn.appendChild(frameGlyph(opt[0]));
+      btn.addEventListener("click", function () {
+        state.frame = opt[0];
+        setChecked(btns, btns.indexOf(btn));
+        $("frameLabel").hidden = opt[0] === "none";
+        render(true, true);
+      });
+      host.appendChild(btn);
+      btns.push(btn);
+    });
+    setChecked(btns, 0);
+    radioKeys(host);
+    $("frameLabel").addEventListener("input", function () {
+      var wasEmpty = !(state.frameLabel || "").trim();
+      state.frameLabel = this.value;
+      var msg = this.value.trim();
+      var isEmpty = !msg;
+      var t = mount.querySelector(":scope > svg text");
+      if (wasEmpty !== isEmpty || state.frame === "none" || !t) {
+        render();
+        return;
+      }
+      /* text-only update: the code never rebuilds while typing */
+      t.textContent = msg;
+      var maxW = parseFloat(t.getAttribute("data-maxw")) || 0;
+      var size = 26;
+      if (maxW && msg.length * size * 0.68 > maxW) {
+        size = Math.max(10, maxW / (msg.length * 0.68));
+      }
+      t.setAttribute("font-size", size);
+      t.setAttribute("letter-spacing", (-0.02 * size).toFixed(2));
+    });
+  })();
+
+  /* ---------- presets: real mini QR thumbnails ---------- */
+  var presetBtns = [];
+  PRESETS.forEach(function (p, idx) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "preset";
+    btn.setAttribute("role", "radio");
+    var wrapEl = document.createElement("span");
+    wrapEl.className = "thumbwrap";
+    wrapEl.style.background = p.bg;
+    var dotsOptions = { type: p.dotType };
+    if (p.dotsGradient) { dotsOptions.gradient = p.dotsGradient; } else { dotsOptions.color = p.dots; }
+    /* canvas thumbs: svg clip-path ids collide across instances and blank out */
+    var thumb = new QRCodeStyling({
+      width: 112, height: 112, type: "canvas", data: "ente", margin: 6,
+      qrOptions: { errorCorrectionLevel: "M" },
+      dotsOptions: dotsOptions,
+      backgroundOptions: { color: p.bg },
+      cornersSquareOptions: { type: p.frameType, color: p.dots },
+      cornersDotOptions: { type: p.eyeType, color: p.corner }
+    });
+    thumb.append(wrapEl);
+    btn.appendChild(wrapEl);
+    var nameEl = document.createElement("span");
+    nameEl.textContent = p.name;
+    btn.appendChild(nameEl);
+    btn.addEventListener("click", function () {
+      state.dotType = p.dotType;
+      state.frameType = p.frameType;
+      state.eyeType = p.eyeType;
+      state.dots = p.dots;
+      state.corner = p.corner;
+      state.bg = p.bg;
+      state.dotsGradient = p.dotsGradient;
+      $("dotTiles")._sync(p.dotType);
+      $("frameTiles")._sync(p.frameType);
+      $("eyeTiles")._sync(p.eyeType);
+      setColor("Dots", p.dots);
+      setColor("Corner", p.corner);
+      setColor("Bg", p.bg);
+      markPreset(idx);
+      render(true, true);
+    });
+    $("presets").appendChild(btn);
+    presetBtns.push(btn);
+  });
+  function markPreset(idx) {
+    setChecked(presetBtns, idx === null ? -1 : idx);
+  }
+  markPreset(0);
+  radioKeys($("presets"));
+
+  /* ---------- colors ---------- */
+  function normalizeHex(v) {
+    v = String(v).trim();
+    if (v[0] !== "#") v = "#" + v;
+    if (/^#[0-9a-fA-F]{3}$/.test(v)) {
+      v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+    }
+    return /^#[0-9a-fA-F]{6}$/.test(v) ? v.toUpperCase() : null;
+  }
+  var applyColor = {
+    Dots: function (v) { state.dots = v; state.dotsGradient = null; },
+    Corner: function (v) { state.corner = v; },
+    Bg: function (v) { state.bg = v; }
+  };
+  var swatchBtns = {};
+  function setSwatchChecked(key, hex) {
+    var btns = swatchBtns[key] || [];
+    var idx = -1;
+    btns.forEach(function (b, i) { if ((b.dataset.hex || "").toUpperCase() === hex) idx = i; });
+    setChecked(btns, idx);
+  }
+  function setColor(key, hex) {
+    hex = normalizeHex(hex);
+    if (!hex) return;
+    $("c" + key).value = hex;
+    $("h" + key).value = hex.toLowerCase();
+    setSwatchChecked(key, hex);
+  }
+  Object.keys(SWATCHES).forEach(function (key) {
+    var host = $("sw" + key);
+    var btns = [];
+    SWATCHES[key].forEach(function (hex) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "swatch";
+      b.dataset.hex = hex;
+      b.style.background = hex;
+      b.setAttribute("role", "radio");
+      b.setAttribute("aria-label", key + " color " + hex);
+      b.addEventListener("click", function () {
+        applyColor[key](hex);
+        setColor(key, hex);
+        markPreset(null);
+        render(true);
+      });
+      host.appendChild(b);
+      btns.push(b);
+    });
+    swatchBtns[key] = btns;
+    setSwatchChecked(key, $("c" + key).value.toUpperCase());
+    radioKeys(host);
+
+    /* the custom wheel is not a radio: it lives beside the group */
+    var wheel = document.createElement("button");
+    wheel.type = "button";
+    wheel.className = "swatch wheel";
+    wheel.setAttribute("aria-label", "Custom " + key + " color");
+    wheel.addEventListener("click", function (e) {
+      e.stopPropagation();
+      openPicker(key, wheel);
+    });
+    host.parentNode.insertBefore(wheel, host.nextSibling);
+
+    $("c" + key).addEventListener("input", function () {
+      applyColor[key](this.value.toUpperCase());
+      setColor(key, this.value);
+      markPreset(null);
+      render();
+    });
+    $("h" + key).addEventListener("input", function () {
+      var hex = normalizeHex(this.value);
+      if (!hex) return;
+      applyColor[key](hex);
+      $("c" + key).value = hex;
+      setSwatchChecked(key, hex);
+      markPreset(null);
+      render();
+    });
+  });
+
+  /* ---------- color picker popover (Figma-style, anchored to the wheel) ---------- */
+  function hsvToHex(h, s, v) {
+    var f = function (n) {
+      var k = (n + h / 60) % 6;
+      var c = v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+      return Math.round(c * 255).toString(16).padStart(2, "0");
+    };
+    return "#" + f(5) + f(3) + f(1);
+  }
+  function hexToHsv(hex) {
+    var r = parseInt(hex.slice(1, 3), 16) / 255;
+    var g = parseInt(hex.slice(3, 5), 16) / 255;
+    var b = parseInt(hex.slice(5, 7), 16) / 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    var h = 0;
+    if (d) {
+      if (max === r) { h = 60 * (((g - b) / d) % 6); }
+      else if (max === g) { h = 60 * ((b - r) / d + 2); }
+      else { h = 60 * ((r - g) / d + 4); }
+    }
+    if (h < 0) { h += 360; }
+    return { h: h, s: max ? d / max : 0, v: max };
+  }
+  var pk = { el: null, key: null, h: 120, s: 1, v: 0.7, sv: null, dot: null, hue: null, hthumb: null, hex: null };
+  function pkSync(fromHexField) {
+    var hex = hsvToHex(pk.h, pk.s, pk.v);
+    pk.sv.style.setProperty("--pk-hue", "hsl(" + pk.h.toFixed(0) + ", 100%, 50%)");
+    pk.dot.style.left = (pk.s * 100) + "%";
+    pk.dot.style.top = ((1 - pk.v) * 100) + "%";
+    pk.dot.style.background = hex;
+    pk.hthumb.style.left = (pk.h / 360 * 100) + "%";
+    if (!fromHexField) { pk.hex.value = hex.toLowerCase(); }
+    if (pk.key) {
+      applyColor[pk.key](hex.toUpperCase());
+      $("c" + pk.key).value = hex.toUpperCase();
+      $("h" + pk.key).value = hex.toLowerCase();
+      setSwatchChecked(pk.key, hex.toUpperCase());
+      markPreset(null);
+      render();
+    }
+  }
+  function pkDrag(el, move) {
+    el.addEventListener("pointerdown", function (e) {
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      move(e);
+      var onMove = function (ev) { move(ev); };
+      var onUp = function () {
+        el.removeEventListener("pointermove", onMove);
+        el.removeEventListener("pointerup", onUp);
+        el.removeEventListener("pointercancel", onUp);
+      };
+      el.addEventListener("pointermove", onMove);
+      el.addEventListener("pointerup", onUp);
+      el.addEventListener("pointercancel", onUp);
+      e.preventDefault();
+    });
+  }
+  function buildPicker() {
+    if (pk.el) { return; }
+    var el = document.createElement("div");
+    el.className = "picker";
+    el.innerHTML = '<div class="pk-sv"><span class="pk-dot"></span></div>' +
+      '<div class="pk-hue"><span class="pk-hthumb"></span></div>' +
+      '<div class="pk-row">' +
+      '<button type="button" class="pk-eyed" aria-label="Pick a color from the screen" hidden>' +
+      '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10.5 5.5L3.6 12.4c-.3.3-.5.7-.5 1.1V15h1.5c.4 0 .8-.2 1.1-.5l6.9-6.9"/><path d="M9 4l3 3 2.2-2.2a2.1 2.1 0 0 0-3-3L9 4z"/></svg>' +
+      '</button>' +
+      '<input class="pk-hex" type="text" maxlength="7" spellcheck="false" aria-label="Hex color">' +
+      '</div>';
+    document.body.appendChild(el);
+    pk.el = el;
+    pk.sv = el.querySelector(".pk-sv");
+    pk.dot = el.querySelector(".pk-dot");
+    pk.hue = el.querySelector(".pk-hue");
+    pk.hthumb = el.querySelector(".pk-hthumb");
+    pk.hex = el.querySelector(".pk-hex");
+    pkDrag(pk.sv, function (e) {
+      var r = pk.sv.getBoundingClientRect();
+      pk.s = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      pk.v = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
+      pkSync();
+    });
+    pkDrag(pk.hue, function (e) {
+      var r = pk.hue.getBoundingClientRect();
+      pk.h = Math.max(0, Math.min(359.9, (e.clientX - r.left) / r.width * 360));
+      pkSync();
+    });
+    pk.hex.addEventListener("input", function () {
+      var hex = normalizeHex(this.value);
+      if (!hex) { return; }
+      var hsv = hexToHsv(hex);
+      pk.h = hsv.h; pk.s = hsv.s; pk.v = hsv.v;
+      pkSync(true);
+    });
+    var eyed = el.querySelector(".pk-eyed");
+    if (window.EyeDropper) {
+      eyed.hidden = false;
+      eyed.addEventListener("click", function () {
+        new window.EyeDropper().open().then(function (res) {
+          var hex = normalizeHex(res.sRGBHex);
+          if (!hex) { return; }
+          var hsv = hexToHsv(hex);
+          pk.h = hsv.h; pk.s = hsv.s; pk.v = hsv.v;
+          pkSync();
+        }).catch(function () {});
+      });
+    }
+    el.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+    document.addEventListener("pointerdown", function (e) {
+      if (pk.el.classList.contains("open") && !pk.el.contains(e.target)) { closePicker(); }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { closePicker(); }
+    });
+  }
+  function closePicker() {
+    if (pk.el) { pk.el.classList.remove("open"); pk.key = null; }
+  }
+  function openPicker(key, anchor) {
+    buildPicker();
+    if (pk.el.classList.contains("open") && pk.key === key) { closePicker(); return; }
+    pk.key = null; /* seed silently first */
+    var hsv = hexToHsv(normalizeHex($("c" + key).value) || "#00B33C");
+    pk.h = hsv.h; pk.s = hsv.s; pk.v = hsv.v;
+    pkSync();
+    pk.key = key;
+    pk.el.classList.add("open");
+    var r = anchor.getBoundingClientRect();
+    var W = 248, H = 250;
+    var x = r.right + 12 + window.scrollX;
+    var y = r.top - 10 + window.scrollY;
+    if (x + W > window.scrollX + window.innerWidth - 8) { x = r.left + window.scrollX - W - 12; }
+    if (x < window.scrollX + 8) { x = window.scrollX + 8; }
+    var maxY = window.scrollY + window.innerHeight - H - 8;
+    if (y > maxY) { y = maxY; }
+    if (y < window.scrollY + 8) { y = window.scrollY + 8; }
+    pk.el.style.left = x + "px";
+    pk.el.style.top = y + "px";
+  }
+
+  /* ---------- data ---------- */
+  $("data").addEventListener("input", function () {
+    state.data = this.value;
+    if (revealed) { render(); }
+  });
+
+  /* ---------- logo: bake shape/chip into a processed data URI ---------- */
+  function bakeLogo() {
+    var img = state.logoImg;
+    if (!img) return;
+    var max = 1024;
+    var w = img.naturalWidth || 1;
+    var h = img.naturalHeight || 1;
+    var k = Math.min(1, max / Math.max(w, h));
+    var W = Math.max(1, Math.round(w * k));
+    var H = Math.max(1, Math.round(h * k));
+    var c = document.createElement("canvas");
+    var ctx;
+    if (state.logoShape === "square" && !state.logoChip) {
+      c.width = W; c.height = H;
+      c.getContext("2d").drawImage(img, 0, 0, W, H);
+    } else {
+      var S = Math.min(W, H);
+      c.width = S; c.height = S;
+      ctx = c.getContext("2d");
+      var r = state.logoShape === "circle" ? S / 2
+            : state.logoShape === "rounded" ? S * 0.22
+            : S * 0.06;
+      if (state.logoChip) {
+        /* white plate in the chosen shape, logo fitted inside untouched */
+        ctx.beginPath();
+        ctx.roundRect(0, 0, S, S, r);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+        var pad = Math.round(S * 0.12);
+        var box = S - pad * 2;
+        var fit = Math.min(box / w, box / h);
+        var fw = w * fit, fh = h * fit;
+        ctx.drawImage(img, (S - fw) / 2, (S - fh) / 2, fw, fh);
+      } else {
+        /* mask: center-crop cover into the shape */
+        ctx.beginPath();
+        ctx.roundRect(0, 0, S, S, r);
+        ctx.clip();
+        var side = Math.min(w, h);
+        ctx.drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, S, S);
+      }
+    }
+    try { state.logo = c.toDataURL("image/png"); } catch (err) { return; }
+    $("logoThumb").style.backgroundImage = "url(" + state.logo + ")";
+  }
+
+  $("logoBtn").addEventListener("click", function () { $("logoFile").click(); });
+  $("logoFile").addEventListener("change", function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      /* probe before committing: an undecodable file (HEIC, corrupt) would
+         hang the lib's image loader forever */
+      var probe = new Image();
+      probe.onload = function () {
+        state.logoImg = probe;
+        bakeLogo();
+        $("logoThumb").style.display = "block";
+        $("logoClear").hidden = false;
+        $("logoOpts").hidden = false;
+        $("logoGapRow").hidden = false;
+        $("logoBtn").textContent = "Replace logo";
+        /* a logo hides modules: High error correction keeps it scannable */
+        state.ec = "H";
+        render(true, true);
+      };
+      probe.onerror = function () {
+        $("logoFile").value = "";
+        var btn = $("logoBtn");
+        var was = btn.textContent;
+        btn.textContent = "Can't read that image";
+        setTimeout(function () { btn.textContent = was; }, 1800);
+      };
+      probe.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  $("logoClear").addEventListener("click", function () {
+    state.logo = null;
+    state.logoImg = null;
+    $("logoFile").value = "";
+    $("logoThumb").style.display = "none";
+    $("logoClear").hidden = true;
+    $("logoOpts").hidden = true;
+    $("logoGapRow").hidden = true;
+    $("logoBtn").textContent = "Add logo";
+    render(true, true);
+  });
+  $("logoGap").addEventListener("change", function () {
+    state.logoGap = this.checked;
+    render(true, true);
+  });
+  tileGroup($("logoShapeTiles"), [
+    ["square", "Square", "2px"], ["rounded", "Rounded", "5px"], ["circle", "Circle", "50%"]
+  ], "dotfill",
+    function () { return state.logoShape; },
+    function (v) { state.logoShape = v; bakeLogo(); });
+  $("logoSizeRange").addEventListener("input", function () {
+    state.logoSize = Number(this.value);
+    $("logoSizeOut").value = this.value;
+    render();
+  });
+  $("logoPadRange").addEventListener("input", function () {
+    state.logoPad = Number(this.value);
+    $("logoPadOut").value = this.value;
+    render();
+  });
+  $("logoChip").addEventListener("change", function () {
+    state.logoChip = this.checked;
+    bakeLogo();
+    render(true, true);
+  });
+
+  /* ---------- morphing icon: three lines, any shape to any shape ---------- */
+  var MI = {
+    download: [[7, 2.2, 7, 9.8], [3.6, 6.4, 7, 9.8], [10.4, 6.4, 7, 9.8]],
+    check:    [[2.8, 7.4, 5.6, 10.4], [5.6, 10.4, 11.2, 3.6], [7, 7, 7, 7]]
+  };
+  var ATTRS = ["x1", "y1", "x2", "y2"];
+  function isPoint(c) { return c[0] === c[2] && c[1] === c[3]; }
+  function morphTo(svg, name) {
+    var target = MI[name];
+    var lines = svg.querySelectorAll("line");
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var from = [];
+    lines.forEach(function (l) {
+      from.push(ATTRS.map(function (a) { return parseFloat(l.getAttribute(a)); }));
+    });
+    var DUR = (reduced || document.hidden) ? 0 : 240;
+    var start = performance.now();
+    if (DUR === 0) {
+      lines.forEach(function (l, i) {
+        ATTRS.forEach(function (a, j) { l.setAttribute(a, String(target[i][j])); });
+        l.style.opacity = isPoint(target[i]) ? "0" : "1";
+      });
+      return;
+    }
+    function frame(t) {
+      var p = DUR ? Math.min(1, (t - start) / DUR) : 1;
+      var e = 1 - Math.pow(1 - p, 3);
+      lines.forEach(function (l, i) {
+        ATTRS.forEach(function (a, j) {
+          l.setAttribute(a, String(from[i][j] + (target[i][j] - from[i][j]) * e));
+        });
+        if (isPoint(target[i])) { l.style.opacity = String(1 - e); }
+        else if (isPoint(from[i])) { l.style.opacity = String(e); }
+        else { l.style.opacity = "1"; }
+      });
+      if (p < 1) { requestAnimationFrame(frame); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function swapText(el, txt) {
+    el.style.opacity = "0";
+    setTimeout(function () {
+      el.textContent = txt;
+      el.style.opacity = "1";
+    }, 120);
+  }
+
+  /* ---------- export: everything goes through the composed SVG ---------- */
+  function tileWrap(qrSvg, size) {
+    var TILE = size / 0.82;
+    var r = TILE * 0.074;
+    var off = (TILE - size) / 2;
+    var wrap = svgNode("svg", { xmlns: SVGNS, viewBox: "0 0 " + TILE + " " + TILE, width: TILE, height: TILE });
+    wrap.appendChild(svgNode("rect", { x: 0, y: 0, width: TILE, height: TILE, rx: r, fill: "#FFFFFF" }));
+    positionQR(qrSvg, off, off, size);
+    wrap.appendChild(qrSvg);
+    wrap.__w = TILE;
+    wrap.__h = TILE;
+    return wrap;
+  }
+  function composedBlob(extension, size) {
+    var k = size / PREVIEW;
+    var snap = frameSnap(); /* freeze frame state now: exports must match the click */
+    var qr = new QRCodeStyling(buildOptions(size, "svg")); /* may throw on overflow */
+    return qr.getRawData("svg").then(function (blob) {
+      return blob.text();
+    }).then(function (txt) {
+      var qrSvg = new DOMParser().parseFromString(txt, "image/svg+xml").documentElement;
+      if (!qrSvg.getAttribute("viewBox")) {
+        qrSvg.setAttribute("viewBox", "0 0 " + size + " " + size);
+      }
+      sealSeams(qrSvg);
+      var root = snap.frame === "none" ? tileWrap(qrSvg, size) : composeFrame(qrSvg, k, snap);
+      var needFont = snap.frame !== "none" && (snap.label || "").trim() !== "";
+      var pre = needFont ? gilroyB64().then(function (b64) {
+        var st = document.createElementNS(SVGNS, "style");
+        st.textContent = "@font-face{font-family:'Gilroy';src:url(data:font/woff2;base64," + b64 + ") format('woff2');font-weight:900;}";
+        root.insertBefore(st, root.firstChild);
+      }) : Promise.resolve();
+      return pre.then(function () {
+      var xml = new XMLSerializer().serializeToString(root);
+      var svgBlob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
+      if (extension === "svg") { return svgBlob; }
+      return new Promise(function (resolve, reject) {
+        var url = URL.createObjectURL(svgBlob);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var c = document.createElement("canvas");
+            c.width = Math.round(root.__w);
+            c.height = Math.round(root.__h);
+            c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+            URL.revokeObjectURL(url);
+            c.toBlob(function (b) {
+              if (b) { resolve(b); } else { reject(new Error("raster")); }
+            }, "image/png");
+          } catch (e) { URL.revokeObjectURL(url); reject(e); }
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error("decode")); };
+        img.src = url;
+      });
+      });
+    });
+  }
+  function saveBlob(blob, name) {
+    var a = document.createElement("a");
+    var url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+  function exportQR(extension) {
+    if (!state.data.trim()) { return Promise.resolve(false); }
+    var size = Number($("exportSize").value);
+    try {
+      return composedBlob(extension, size).then(function (blob) {
+        saveBlob(blob, "enteqr." + (extension === "svg" ? "svg" : "png"));
+        return true;
+      }).catch(function () { return false; });
+    } catch (err) {
+      /* over capacity: the preview already explains it */
+      return Promise.resolve(false);
+    }
+  }
+
+  var dlBusy = false;
+  $("dlPng").addEventListener("click", function () {
+    if (dlBusy) return;
+    dlBusy = true;
+    var icon = this.querySelector("svg.mi");
+    var label = $("dlPngLabel");
+    var tile = document.querySelector(".tile");
+    exportQR("png").then(function (ok) {
+      if (!ok) { dlBusy = false; return; }
+      tile.classList.add("stamp");
+      tile.addEventListener("animationend", function h() {
+        tile.classList.remove("stamp");
+        tile.removeEventListener("animationend", h);
+      });
+      morphTo(icon, "check");
+      swapText(label, "Saved");
+      setTimeout(function () {
+        morphTo(icon, "download");
+        swapText(label, "Download");
+        dlBusy = false;
+      }, 1600);
+    });
+  });
+  $("dlSvg").addEventListener("click", function () {
+    if (dlBusy) return;
+    dlBusy = true;
+    exportQR("svg").then(function () { dlBusy = false; });
+  });
+
+  var copyBtn = $("copyBtn");
+  var copyLbl = copyBtn.querySelector(".lbl");
+  if (!(navigator.clipboard && window.ClipboardItem)) {
+    copyBtn.hidden = true;
+  } else {
+    var copyBusy = false;
+    copyBtn.addEventListener("click", function () {
+      if (copyBusy || !state.data.trim()) return;
+      copyBusy = true;
+      var done = function (msg) {
+        swapText(copyLbl, msg);
+        setTimeout(function () {
+          swapText(copyLbl, "Copy");
+          copyBusy = false;
+        }, 1400);
+      };
+      try {
+        /* hand the promise to ClipboardItem synchronously: Safari revokes
+           the user gesture if we await the blob first */
+        var blobP = composedBlob("png", 1024).then(function (b) {
+          if (!b) { throw new Error("empty"); }
+          return b;
+        });
+        navigator.clipboard.write([new ClipboardItem({ "image/png": blobP })])
+          .then(function () { done("Copied"); })
+          .catch(function () { done("Failed"); });
+      } catch (err) {
+        done("Failed");
+      }
+    });
+  }
+
+  /* ---------- sliders: green progress on a light track ---------- */
+  function paintRange(el) {
+    var p = ((el.value - el.min) / (el.max - el.min)) * 100;
+    el.style.background = "linear-gradient(to right, var(--green) 0%, var(--green) " +
+      p + "%, var(--seg-track) " + p + "%, var(--seg-track) 100%)";
+  }
+  document.querySelectorAll('input[type="range"]').forEach(function (r) {
+    paintRange(r);
+    r.addEventListener("input", function () { paintRange(r); });
+  });
+
+  /* ---------- hero art card: a real, scannable code ---------- */
+  try {
+    new QRCodeStyling({
+      width: 660, height: 660, type: "canvas", data: "https://ente.com", margin: 0,
+      qrOptions: { errorCorrectionLevel: "Q" },
+      dotsOptions: { color: "#171B19", type: "rounded" },
+      backgroundOptions: { color: "#FFFFFF" },
+      cornersSquareOptions: { type: "extra-rounded", color: "#171B19" },
+      cornersDotOptions: { type: "dot", color: "#00B33C" }
+    }).append($("heroQR"));
+  } catch (e) { /* decorative only */ }
+
+  /* ---------- hero art: the card faces the pointer, wherever it is ---------- */
+  (function () {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) { return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { return; }
+    var card = document.querySelector(".artcard");
+    var sheen = document.querySelector(".artcard .sheen");
+    if (!card || !sheen) { return; }
+    var TRACK = "box-shadow 260ms var(--ease-out), transform 140ms linear";
+    card.style.transition = TRACK;
+    var raf = null, tx = 0, ty = 0;
+    function apply() {
+      raf = null;
+      card.style.setProperty("--ry", (tx * 7).toFixed(2) + "deg");
+      card.style.setProperty("--rx", (-ty * 7).toFixed(2) + "deg");
+      sheen.style.transform = "translate(" + (tx * 12).toFixed(1) + "%, " + (ty * 7).toFixed(1) + "%)";
+    }
+    window.addEventListener("pointermove", function (e) {
+      var r = card.getBoundingClientRect();
+      var cx = r.left + r.width / 2;
+      var cy = r.top + r.height / 2;
+      tx = Math.max(-1, Math.min(1, (e.clientX - cx) / (window.innerWidth / 2)));
+      ty = Math.max(-1, Math.min(1, (e.clientY - cy) / (window.innerHeight / 2)));
+      if (!raf) { raf = requestAnimationFrame(apply); }
+    }, { passive: true });
+    document.documentElement.addEventListener("pointerleave", function () {
+      card.style.transition = "box-shadow 260ms var(--ease-out), transform 700ms var(--ease-out)";
+      card.style.setProperty("--rx", "0deg");
+      card.style.setProperty("--ry", "0deg");
+      setTimeout(function () { card.style.transition = TRACK; }, 720);
+    });
+  })();
+
+  /* ---------- studio tile: gentle tilt while hovered ---------- */
+  (function () {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) { return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { return; }
+    var tile = document.querySelector(".tile");
+    if (!tile) { return; }
+    var raf = null, px = 0, py = 0;
+    function apply() {
+      raf = null;
+      tile.style.setProperty("--ty", (px * 6).toFixed(2) + "deg");
+      tile.style.setProperty("--tx", (-py * 6).toFixed(2) + "deg");
+    }
+    tile.addEventListener("pointerenter", function () {
+      tile.style.transition = "transform 140ms linear";
+    });
+    tile.addEventListener("pointermove", function (e) {
+      var r = tile.getBoundingClientRect();
+      px = ((e.clientX - r.left) / r.width) * 2 - 1;
+      py = ((e.clientY - r.top) / r.height) * 2 - 1;
+      if (!raf) { raf = requestAnimationFrame(apply); }
+    });
+    tile.addEventListener("pointerleave", function () {
+      tile.style.transition = "transform 550ms var(--ease-out)";
+      tile.style.setProperty("--tx", "0deg");
+      tile.style.setProperty("--ty", "0deg");
+    });
+  })();
+
+  /* ---------- stickers: grab, drag, spring back home ---------- */
+  (function () {
+    var SPRING = "transform 650ms linear(0, 0.013 1.2%, 0.05 2.5%, 0.193 5.4%, 0.72 12.7%, 0.881 15.6%, 1.004 18.6%, 1.05 20.5%, 1.081 22.5%, 1.093 24.6%, 1.087 27.1%, 1.056 31%, 0.997 37.6%, 0.977 41.7%, 0.974 46.7%, 0.999 59.5%, 1.002 69.5%, 1)";
+    if (!CSS.supports("transition-timing-function", "linear(0, 1)")) {
+      SPRING = "transform 480ms cubic-bezier(0.23, 1, 0.32, 1)";
+    }
+    document.querySelectorAll(".art .chip").forEach(function (chip) {
+      var sx = 0, sy = 0, bx = 0, by = 0, cx = 0, cy = 0, dragging = false;
+      chip.addEventListener("pointerdown", function (e) {
+        dragging = true;
+        sx = e.clientX;
+        sy = e.clientY;
+        chip.classList.add("dragging");
+        try { chip.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
+        e.preventDefault();
+      });
+      chip.addEventListener("pointermove", function (e) {
+        if (!dragging) { return; }
+        cx = bx + (e.clientX - sx);
+        cy = by + (e.clientY - sy);
+        chip.style.transform = "translate(" + cx + "px, " + cy + "px) rotate(" + ((cx - bx) * 0.04).toFixed(1) + "deg) scale(1.07)";
+      });
+      function release() {
+        if (!dragging) { return; }
+        dragging = false;
+        bx = cx;
+        by = cy;
+        chip.classList.remove("dragging");
+        /* settle in place: drop the lean and lift, keep the position */
+        chip.style.transition = SPRING;
+        chip.style.transform = "translate(" + bx + "px, " + by + "px)";
+        chip.addEventListener("transitionend", function h() {
+          chip.style.transition = "";
+          chip.removeEventListener("transitionend", h);
+        });
+      }
+      chip.addEventListener("pointerup", release);
+      chip.addEventListener("pointercancel", release);
+    });
+  })();
+
+  /* ---------- share: story card composer ---------- */
+  function rasterizeQR(size) {
+    /* current styled code, no frame: the story card is the frame */
+    var snap = { frame: "none", label: "", fg: state.dots, bg: state.bg };
+    var qr = new QRCodeStyling(buildOptions(size, "svg"));
+    return qr.getRawData("svg").then(function (blob) {
+      return blob.text();
+    }).then(function (txt) {
+      var qrSvg = new DOMParser().parseFromString(txt, "image/svg+xml").documentElement;
+      if (!qrSvg.getAttribute("viewBox")) {
+        qrSvg.setAttribute("viewBox", "0 0 " + size + " " + size);
+      }
+      sealSeams(qrSvg);
+      var xml = new XMLSerializer().serializeToString(qrSvg);
+      var url = URL.createObjectURL(new Blob([xml], { type: "image/svg+xml;charset=utf-8" }));
+      return new Promise(function (resolve, reject) {
+        var img = new Image();
+        img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error("decode")); };
+        img.src = url;
+      });
+    });
+  }
+  function roundRectPath(x, y, w, h, r, ctx) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function ghostLayer() {
+    if (ghostLayer._p) { return ghostLayer._p; }
+    ghostLayer._p = new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = reject;
+      img.src = "bg-ghosts.svg";
+    });
+    return ghostLayer._p;
+  }
+  function wordmarkImg() {
+    if (wordmarkImg._p) { return wordmarkImg._p; }
+    wordmarkImg._p = new Promise(function (resolve) {
+      var node = document.querySelector(".hs-nav .mark svg");
+      if (!node) { resolve(null); return; }
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(node));
+    });
+    return wordmarkImg._p;
+  }
+  function makeStory(caption) {
+    var W = 1080, H = 1440;
+    var fontsReady = Promise.all([
+      document.fonts.load("700 92px Gilroy"),
+      document.fonts.load("500 40px Gilroy")
+    ]).catch(function () {});
+    return Promise.all([rasterizeQR(1000), fontsReady, ghostLayer(), wordmarkImg()]).then(function (res) {
+      var qrImg = res[0];
+      var ghosts = res[2];
+      var c = document.createElement("canvas");
+      c.width = W;
+      c.height = H;
+      var x = c.getContext("2d");
+      /* green rounded card fills the frame, corners transparent */
+      var grad = x.createRadialGradient(W / 2, H * 0.38, 100, W / 2, H * 0.45, H * 0.8);
+      grad.addColorStop(0, "#25C83F");
+      grad.addColorStop(1, "#16BA31");
+      roundRectPath(0, 0, W, H, 64, x);
+      x.fillStyle = grad;
+      x.fill();
+      /* the designed ghost layer, top and bottom, clipped to the card */
+      x.save();
+      roundRectPath(0, 0, W, H, 64, x);
+      x.clip();
+      var gw = W;
+      var gh = W * (ghosts.naturalHeight / ghosts.naturalWidth);
+      x.drawImage(ghosts, 0, -30, gw, gh);
+      x.save();
+      x.translate(W, H + 30);
+      x.rotate(Math.PI);
+      x.drawImage(ghosts, 0, 0, gw, gh);
+      x.restore();
+      x.restore();
+      /* white tile, centered, straight */
+      var TILE = 780, PAD = 60, R = 64;
+      var tx = (W - TILE) / 2, ty = 130;
+      x.save();
+      x.shadowColor = "rgba(0,0,0,0.22)";
+      x.shadowBlur = 60;
+      x.shadowOffsetY = 26;
+      x.fillStyle = "#FFFFFF";
+      roundRectPath(tx, ty, TILE, TILE, R, x);
+      x.fill();
+      x.restore();
+      var qs = TILE - PAD * 2;
+      x.drawImage(qrImg, tx + PAD, ty + PAD, qs, qs);
+      /* caption: up to two centered lines, fixed size */
+      var msg = (caption || "").trim();
+      if (msg) {
+        var size = 88;
+        x.font = "700 " + size + "px Gilroy, sans-serif";
+        x.textAlign = "center";
+        x.fillStyle = "#FFFFFF";
+        var maxW = W - 160;
+        /* words longer than a line (no spaces) break at character level */
+        var words = [];
+        msg.split(/\s+/).forEach(function (w) {
+          if (x.measureText(w).width <= maxW) { words.push(w); return; }
+          var chunk = "";
+          for (var ci = 0; ci < w.length; ci++) {
+            if (chunk && x.measureText(chunk + w[ci]).width > maxW) {
+              words.push(chunk);
+              chunk = w[ci];
+            } else {
+              chunk += w[ci];
+            }
+          }
+          if (chunk) { words.push(chunk); }
+        });
+        var lines = [""];
+        var li = 0;
+        words.forEach(function (w) {
+          var test = lines[li] ? lines[li] + " " + w : w;
+          if (x.measureText(test).width > maxW && lines[li]) {
+            li++;
+            lines.push(w);
+          } else {
+            lines[li] = test;
+          }
+        });
+        if (lines.length > 2) {
+          lines[1] = lines.slice(1).join(" ");
+          lines = lines.slice(0, 2);
+        }
+        lines.forEach(function (ln) {
+          if (x.measureText(ln).width > maxW) {
+            size = Math.min(size, Math.floor(size * maxW / x.measureText(ln).width));
+          }
+        });
+        if (size < 88) { x.font = "700 " + size + "px Gilroy, sans-serif"; }
+        var y0 = ty + TILE + 150;
+        lines.forEach(function (ln, i) {
+          x.fillText(ln, W / 2, y0 + i * size * 1.18);
+        });
+      }
+      /* quiet credit line: wordmark + text */
+      var mark = res[3];
+      x.font = "500 40px Gilroy, sans-serif";
+      x.fillStyle = "rgba(255, 255, 255, 0.95)";
+      if (mark) {
+        var mh = 44;
+        var mw = mh * (1763 / 483);
+        var creditTxt = "\u00b7 private by design";
+        x.textAlign = "left";
+        x.textBaseline = "middle";
+        var gapW = 20;
+        var tw = x.measureText(creditTxt).width;
+        var startX = (W - (mw + gapW + tw)) / 2;
+        var cy = H - 104;
+        x.drawImage(mark, startX, cy - mh / 2, mw, mh);
+        x.fillText(creditTxt, startX + mw + gapW, cy + 2);
+        x.textBaseline = "alphabetic";
+      } else {
+        x.textAlign = "center";
+        x.fillText("enteqr \u00b7 private by design", W / 2, H - 92);
+      }
+      return c;
+    });
+  }
+
+  /* ---------- share sheet ---------- */
+  var sheetOpen = false;
+  var storyTimer = null;
+  var storyCanvas = null;
+  function refreshStory(now) {
+    clearTimeout(storyTimer);
+    function build() {
+      makeStory($("storyCaption").value).then(function (c) {
+        storyCanvas = c;
+        $("storyPreview").src = c.toDataURL("image/png");
+      }).catch(function () {
+        closeSheet();
+      });
+    }
+    if (now) { build(); } else { storyTimer = setTimeout(build, 120); }
+  }
+  function openSheet() {
+    if (!state.data.trim()) { return; }
+    sheetOpen = true;
+    $("storyPreview").classList.remove("ready");
+    $("sheetBack").classList.add("open");
+    $("shareSheet").classList.add("open");
+    refreshStory(true);
+  }
+  $("storyPreview").addEventListener("load", function () {
+    $("storyPreview").classList.add("ready");
+  });
+  function closeSheet() {
+    sheetOpen = false;
+    $("sheetBack").classList.remove("open");
+    $("shareSheet").classList.remove("open");
+  }
+  $("shareBtn").addEventListener("click", openSheet);
+  $("sheetBack").addEventListener("click", closeSheet);
+  $("sheetClose").addEventListener("click", closeSheet);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && sheetOpen) { closeSheet(); }
+  });
+  $("storyCaption").addEventListener("input", refreshStory);
+  function storyBlob() {
+    return new Promise(function (resolve, reject) {
+      if (!storyCanvas) { reject(new Error("no story")); return; }
+      storyCanvas.toBlob(function (b) {
+        if (b) { resolve(b); } else { reject(new Error("blob")); }
+      }, "image/png");
+    });
+  }
+  $("storyShare").addEventListener("click", function () {
+    storyBlob().then(function (b) {
+      var file = new File([b], "enteqr-story.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file] }).catch(function () {});
+      }
+      saveBlob(b, "enteqr-story.png");
+    }).catch(function () {});
+  });
+  $("storySave").addEventListener("click", function () {
+    storyBlob().then(function (b) {
+      saveBlob(b, "enteqr-story.png");
+    }).catch(function () {});
+  });
+
+  /* ---------- the reveal: studio appears once a link is given ---------- */
+  var revealed = false;
+  function scrollToStudio() {
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    $("studioWrap").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  }
+  $("heroForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = $("data").value.trim();
+    if (!v) {
+      var f = this;
+      f.classList.remove("shake");
+      void f.offsetWidth;
+      f.classList.add("shake");
+      return;
+    }
+    state.data = v;
+    if (revealed) {
+      render(true);
+      scrollToStudio();
+      return;
+    }
+    revealed = true;
+    $("studioWrap").hidden = false;
+    render(true);
+    scrollToStudio();
+  });
+})();
+</script>
+</body>
+</html>
