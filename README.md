@@ -1,5 +1,7 @@
 # ente qr
 
+![ente qr](hero.png)
+
 A QR code generator that keeps to itself. Paste a link, style the code, download it. Everything happens in the browser.
 
 Most free QR tools put *their* link inside your code and redirect through their servers, so they can count every scan and switch the code off later. This one encodes your link directly. Nothing is uploaded, nothing is stored, and no account is needed. Once you download a code it works forever, with or without this site.
@@ -12,12 +14,6 @@ Most free QR tools put *their* link inside your code and redirect through their 
 - Frames with your own label, baked into every export
 - PNG and SVG export from 512 to 2048 px, or copy straight to the clipboard
 - A share card that turns the code into a story-sized image
-
-## How it works
-
-One static page. No build step, no framework, no backend.
-
-The QR engine is [qr-code-styling](https://github.com/kozakdenys/qr-code-styling) (MIT), vendored in `vendor/` so the page makes no third-party requests. Fonts are self-hosted in `fonts/`. Adding a logo raises error correction to H automatically so the code still scans.
 
 ## Run it
 
@@ -39,7 +35,6 @@ Note that `connect-src` in `_headers` must keep `data:` and `blob:` — the QR l
 |------|-----------|
 | `index.html` | the tool |
 | `why.html` | the story behind it, served at `/why` |
-| `vendor/` | the QR library, vendored |
 | `fonts/` | Gilroy (licensed) and Gochi Hand (OFL, licence included) |
 | `blog-assets/` | the screen recording used on `/why` |
 | `_headers`, `_redirects` | host config |
