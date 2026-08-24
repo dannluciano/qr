@@ -1,6 +1,6 @@
-# ente qr
+# Ente QR
 
-![ente qr](hero.png)
+![Ente QR](hero.png)
 
 A QR code generator that keeps to itself. Paste a link, style the code, download it. Everything happens in the browser.
 
