@@ -1,6 +1,6 @@
 # Ente QR
 
-![Ente QR](hero.png)
+![Ente QR](assets/hero.png)
 
 A QR code generator that keeps to itself. Paste a link, style the code, download it. Everything happens in the browser.
 
@@ -15,30 +15,6 @@ Most free QR tools put *their* link inside your code and redirect through their 
 - PNG and SVG export from 512 to 2048 px, or copy straight to the clipboard
 - A share card that turns the code into a story-sized image
 
-## Run it
-
-```
-python3 -m http.server 4519
-```
-
-Then open http://localhost:4519. Opening `index.html` directly works too.
-
-## Deploy
-
-Any static host. `_headers` carries the CSP and security headers, `_redirects` maps `/blog` to `/why`.
-
-Note that `connect-src` in `_headers` must keep `data:` and `blob:` — the QR library inlines logo images over XHR, and dropping them silently breaks logo embedding on the live site.
-
-## Files
-
-| Path | What it is |
-|------|-----------|
-| `index.html` | the tool |
-| `why.html` | the story behind it, served at `/why` |
-| `fonts/` | Gilroy (licensed) and Gochi Hand (OFL, licence included) |
-| `blog-assets/` | the screen recording used on `/why` |
-| `_headers`, `_redirects` | host config |
-
 ## Licence
 
-Gochi Hand ships under the SIL Open Font License, included at `fonts/GochiHand-OFL.txt`. Gilroy is a commercial font used under licence.
+Figtree and Gochi Hand ship under the SIL Open Font License, included at `assets/fonts/Figtree-OFL.txt` and `assets/fonts/GochiHand-OFL.txt`.
